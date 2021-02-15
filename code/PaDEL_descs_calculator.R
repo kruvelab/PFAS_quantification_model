@@ -34,7 +34,7 @@ PaDEL_original = function(standards) {
     left_join(SMILES_list)
   
   write_delim(SMILES_list %>% select(SMILES),
-              "data/SMILES.smi",
+              "SMILES.smi",
               col_names = FALSE)
   
   command = "java -jar PaDEL-Descriptor/PaDEL-Descriptor.jar -dir" #file name where they will be calculated
