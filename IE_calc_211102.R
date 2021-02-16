@@ -1,15 +1,15 @@
 library(tidyverse)
 library(plotly)
-setwd("~/GitHub/PFOA_semi_quant")
+#setwd("~/GitHub/PFOA_semi_quant")
 source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
+setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #regressor----
 
-regressor = readRDS("regressors/regressor_neg.rds")
+regressor = readRDS("regressors/regressor_neg_new.rds")
 descs_names = readRDS("regressors/negative_descs.rds")
 
 #lcms data ----
@@ -39,7 +39,9 @@ descs_calc_PFOA = read_delim("data/descs_calc.csv",
                               col_names = TRUE)
 
 descs_calc_PFOA = descs_calc_PFOA %>%
-  select(Compound, SMILES, all_of(descs_names))
+  select(Compound, SMILES, 
+         #all_of(descs_names),
+        everything())
 
 descs_calc_PFOA = descs_calc_PFOA %>%
   group_by(SMILES) %>%
@@ -79,6 +81,11 @@ training = data %>%
   mutate(`Theoretical Amt` = as.numeric(`Theoretical Amt`)) %>%
   mutate(`Theoretical Amt` = `Theoretical Amt`/MW) #correct with MW
 
+ggplot(data = training) +
+  geom_point(mapping = aes(x = `Theoretical Amt`,
+                           y = area_IC)) +
+  facet_wrap(~Compound, scales = "free")
+
 training = training %>%
   group_by(SMILES) %>%
   mutate(slope = linear_regression(area_IC, `Theoretical Amt`)$slope) %>%
@@ -103,8 +110,10 @@ IE_slope_cor = ggplot(data = IE_pred) +
                            text = Compound)) +
   scale_y_log10()
 
-graph_1sttryPFAScal=ggplotly(IE_slope_cor)
+IE_slope_cor
 
+graph_1sttryPFAScal=ggplotly(IE_slope_cor)
+graph_1sttryPFAScal
 
 htmlwidgets::saveWidget(plotly::as_widget(graph_1sttryPFAScal), "1stryPFAScal.html")
 
@@ -115,3 +124,10 @@ slope_RT_cor = ggplot(data = IE_pred) +
   scale_y_log10()
 
 ggplotly(slope_RT_cor)
+
+graph_slope_logP = ggplot(data = IE_pred) +
+  geom_point(mapping = aes(x = ALogP,
+                           y = slope, 
+                           text = Compound)) 
+
+ggplotly(graph_slope_logP)
