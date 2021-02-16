@@ -1,10 +1,11 @@
 library(tidyverse)
 library(plotly)
+setwd("~/GitHub/PFOA_semi_quant")
 source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
+#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #regressor----
 
@@ -31,7 +32,11 @@ SMILES_data = SMILES_data %>%
   select(Compound, SMILES) %>%
   na.omit()
 
-descs_calc_PFOA = PaDEL_original(SMILES_data)
+#descs_calc_PFOA = PaDEL_original(SMILES_data)
+
+descs_calc_PFOA = read_delim("data/descs_calc.csv",
+                              delim = ",",
+                              col_names = TRUE)
 
 descs_calc_PFOA = descs_calc_PFOA %>%
   select(Compound, SMILES, all_of(descs_names))
@@ -47,7 +52,7 @@ eluent = read_delim("data/eluent.csv",
                     col_names = TRUE)
 
 organic_modifier = "MeCN"
-pH.aq. = 5.0
+pH.aq. = 7.0
 
 #
 
@@ -66,6 +71,7 @@ data = data %>%
     surface_tension = surfacetension(organic,organic_modifier),
     polarity_index = polarityindex(organic,organic_modifier)) 
 
+#?? why are there some missing smiles- Anneli
 training = data %>%
   filter(!is.na(SMILES)) %>%
   filter(`Theoretical Amt` != "N/F") %>%
@@ -97,7 +103,10 @@ IE_slope_cor = ggplot(data = IE_pred) +
                            text = Compound)) +
   scale_y_log10()
 
-ggplotly(IE_slope_cor)
+graph_1sttryPFAScal=ggplotly(IE_slope_cor)
+
+
+htmlwidgets::saveWidget(plotly::as_widget(graph_1sttryPFAScal), "1stryPFAScal.html")
 
 slope_RT_cor = ggplot(data = IE_pred) +
   geom_point(mapping = aes(x = as.numeric(RT),
