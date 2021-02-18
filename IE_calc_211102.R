@@ -29,7 +29,7 @@ SMILES_data = read_delim("data/Smiles_for_Target_PFAS.csv",
 
 SMILES_data = SMILES_data %>%
   rename(Compound = ID) %>%
-  select(Compound, SMILES) %>%
+  select(Compound, SMILES, Class) %>%
   na.omit()
 
 #descs_calc_PFOA = PaDEL_original(SMILES_data)
@@ -84,7 +84,9 @@ training = data %>%
 ggplot(data = training) +
   geom_point(mapping = aes(x = `Theoretical Amt`,
                            y = area_IC)) +
-  facet_wrap(~Compound, scales = "free")
+  facet_wrap(~Compound, scales = "free") +
+  scale_x_log10() +
+  scale_y_log10()
 
 training = training %>%
   group_by(SMILES) %>%
@@ -102,13 +104,16 @@ IE_pred <- IE_pred %>%
   select(SMILES,logIE_pred, everything())
 
 IE_pred = IE_pred %>%
-  select(Compound, SMILES, logIE_pred, slope, everything())
+  left_join(SMILES_data) %>%
+  select(Compound, SMILES, Class, logIE_pred, slope, everything())
 
 IE_slope_cor = ggplot(data = IE_pred) +
   geom_point(mapping = aes(x = logIE_pred,
                            y = slope, 
-                           text = Compound)) +
-  scale_y_log10()
+                           text = Compound, 
+                           color = Class)) +
+  scale_y_log10() +
+  facet_wrap(~Class)
 
 IE_slope_cor
 
@@ -128,6 +133,7 @@ ggplotly(slope_RT_cor)
 graph_slope_logP = ggplot(data = IE_pred) +
   geom_point(mapping = aes(x = ALogP,
                            y = slope, 
-                           text = Compound)) 
+                           text = Compound)) +
+  facet_wrap(~Class)
 
 ggplotly(graph_slope_logP)
