@@ -5,7 +5,7 @@ source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
+#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #regressor----
 
@@ -24,10 +24,11 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
 #smiles and descriptors----
 
 SMILES_data = read_delim("data/Smiles_for_Target_PFAS.csv",
-                         delim = ",",
+                         delim = "\t",
                          col_names = TRUE)
-#how many unique SMIELS are there
-SMILES_data %>% select(SMILES) %>% unique()
+
+#how many unique SMILES are there
+#SMILES_data %>% select(SMILES) %>% unique()
 
 SMILES_data = SMILES_data %>%
   rename(Compound = ID) %>%
@@ -45,8 +46,8 @@ descs_calc_PFOA = descs_calc_PFOA %>%
          #all_of(descs_names),
         everything())
 
-#checking number of unique analytes
-descs_calc_PFOA %>% select(SMILES) %>% unique()
+#check number of unique analytes
+#descs_calc_PFOA %>% select(SMILES) %>% unique()
 
 descs_calc_PFOA = descs_calc_PFOA %>%
   group_by(SMILES) %>%
@@ -54,8 +55,8 @@ descs_calc_PFOA = descs_calc_PFOA %>%
          MW = molecularmass(SMILES)) %>%
   ungroup()
 
-#checking number of unique analytes
-descs_calc_PFOA %>% select(SMILES) %>% unique()
+#check number of unique analytes
+#descs_calc_PFOA %>% select(SMILES) %>% unique()
 
 #eluent---
 eluent = read_delim("data/eluent.csv",
@@ -67,12 +68,11 @@ pH.aq. = 7.0
 
 
 data = Orbitrap_dataset_raw %>%
-  left_join(SMILES_data)%>%
-  select(Compound, SMILES)%>&
-  unique()
+  left_join(descs_calc_PFOA)
+  
 
-#checking number of unique analytes
-data %>% select(SMILES) %>% unique()
+#check number of unique analytes
+#data %>% select(SMILES) %>% unique()
   
 
 data = data %>%
@@ -87,13 +87,14 @@ data = data %>%
     surface_tension = surfacetension(organic,organic_modifier),
     polarity_index = polarityindex(organic,organic_modifier)) 
 
-#?? why are there some missing smiles- Anneli
+#data %>% select(SMILES) %>% unique()
 training = data %>%
   filter(!is.na(SMILES)) %>%
   filter(`Theoretical Amt` != "N/F") %>%
   filter(`Theoretical Amt` != "N/A") %>%
   mutate(`Theoretical Amt` = as.numeric(`Theoretical Amt`)) %>%
   mutate(`Theoretical Amt` = `Theoretical Amt`/MW) #correct with MW
+#print(training %>% select(Compound) %>% unique(), n=40)
 
 ggplot(data = training) +
   geom_point(mapping = aes(x = `Theoretical Amt`,
@@ -106,10 +107,13 @@ training = training %>%
   group_by(SMILES) %>%
   mutate(slope = linear_regression(area_IC, `Theoretical Amt`)$slope) %>%
   ungroup()
+#print(training %>% select(Compound) %>% unique(), n=40)
 
 IE_pred = training %>% 
   mutate(logIE_pred = 0) %>%
   na.omit()
+
+#print(IE_pred %>% select(Compound) %>% unique(), n=40)
 
 prediction =  predict(regressor, newdata = IE_pred, predict.all = TRUE)
 prediction = prediction$aggregate
@@ -117,9 +121,13 @@ IE_pred <- IE_pred %>%
   mutate(logIE_pred = prediction) %>%
   select(SMILES,logIE_pred, everything())
 
+#print(IE_pred %>% select(Compound) %>% unique(), n=40)
+
 IE_pred = IE_pred %>%
   left_join(SMILES_data) %>%
   select(Compound, SMILES, Class, logIE_pred, slope, everything())
+
+#print(IE_pred %>% select(Compound) %>% unique(), n=40)
 
 IE_slope_cor = ggplot(data = IE_pred) +
   geom_point(mapping = aes(x = logIE_pred,

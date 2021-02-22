@@ -77,10 +77,10 @@ viscosity <- function(organic,organic_modifier){
 }
 
 linear_regression <- function(y, x) {
-  if(length(y) > 3) {
-    for (i in length(y):3){
-      y = y[1:i]
-      x = x[1:i]
+  if(length(y) > 5) {
+    for (i in length(y):5){
+      y = y[2:length(y)]
+      x = x[2:length(x)]
       slope = summary(lm(y ~ x))$coefficients[2]
       intercept = summary(lm(y ~ x))$coefficients[1]
       residuals = (y - (slope*x +intercept))/y*100
