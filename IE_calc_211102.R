@@ -45,10 +45,17 @@ descs_calc_PFOA = descs_calc_PFOA %>%
          #all_of(descs_names),
         everything())
 
+#checking number of unique analytes
+descs_calc_PFOA %>% select(SMILES) %>% unique()
+
 descs_calc_PFOA = descs_calc_PFOA %>%
   group_by(SMILES) %>%
   mutate(IC = isotopedistribution(SMILES),
-         MW = molecularmass(SMILES))
+         MW = molecularmass(SMILES)) %>%
+  ungroup()
+
+#checking number of unique analytes
+descs_calc_PFOA %>% select(SMILES) %>% unique()
 
 #eluent---
 eluent = read_delim("data/eluent.csv",
@@ -58,10 +65,15 @@ eluent = read_delim("data/eluent.csv",
 organic_modifier = "MeCN"
 pH.aq. = 7.0
 
-#
 
 data = Orbitrap_dataset_raw %>%
-  left_join(descs_calc_PFOA)
+  left_join(SMILES_data)%>%
+  select(Compound, SMILES)%>&
+  unique()
+
+#checking number of unique analytes
+data %>% select(SMILES) %>% unique()
+  
 
 data = data %>%
   mutate(
