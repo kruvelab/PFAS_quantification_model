@@ -1,11 +1,11 @@
 library(tidyverse)
 library(plotly)
-#setwd("~/GitHub/PFOA_semi_quant")
+setwd("~/GitHub/PFOA_semi_quant")
 source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
+#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #regressor----
 
