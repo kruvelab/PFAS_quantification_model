@@ -5,7 +5,7 @@ source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
+setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #regressor----
 
@@ -26,6 +26,8 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
 SMILES_data = read_delim("data/Smiles_for_Target_PFAS.csv",
                          delim = ",",
                          col_names = TRUE)
+#how many unique SMIELS are there
+SMILES_data %>% select(SMILES) %>% unique()
 
 SMILES_data = SMILES_data %>%
   rename(Compound = ID) %>%
