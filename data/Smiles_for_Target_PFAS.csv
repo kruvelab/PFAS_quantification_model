@@ -24,7 +24,7 @@ FOSA	Perfluoroalkane sulfonamides	C8F17SO2NH2		[C8HF17NO2S]-	497.945652	497.9462
 FOSAA	Perfluoroalkane sulfonamidoacetic acids	C10H4F17NO4S		[C10H4F17NO4S]-	555.951132	555.95168	2806-24-8	OC(=O)CN[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F	N-[(Heptadecafluorooctyl)sulfonyl]glycine 
 FPePA	Fluorotelomer carboxylic acid	C8F11H5O2				341.00411	914637-49-3	OC(=O)CCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F	"4,4,5,5,6,6,7,7,8,8,8-Undecafluorooctanoic acid"
 FPrPA	Fluorotelomer carboxylic acid	C6F7H5O2				241.0105	356-02-5	OC(=O)CCC(F)(F)C(F)(F)C(F)(F)F	"4,4,5,5,6,6,6-Heptafluorohexanoic acid"
-HFPO-DA	Chlorinated polyfluorinated ether carboxylic acids	C6F11O3H				328.96773	62037-80-3	[NH4+].[O-]C(=O)C(F)(OC(F)(F)C(F)(F)C(F)(F)F)C(F)(F)F	"Ammonium 2,3,3,3-tetrafluoro-2-(heptafluoropropoxy)propanoate"
+HFPO-DA	Chlorinated polyfluorinated ether carboxylic acids	C6F11O3H				328.96773	62037-80-3	OC(=O)C(F)(OC(F)(F)C(F)(F)C(F)(F)F)C(F)(F)F	"Ammonium 2,3,3,3-tetrafluoro-2-(heptafluoropropoxy)propanoate"
 MeFOSA	Perfluoroalkane sulfonamides	C9F17SO2NH4				511.96185	2355-31-9	CN(CC(O)=O)[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F	N-[(Heptadecafluorooctyl)sulfonyl]-N-methylglycine
 MeFOSAA	Perfluoroalkane sulfonamidoacetic acids	C11F17SO4NH6	570.9746076			569.96733	2355-31-9	CN(CC(O)=O)S(=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F	"N-(1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,8-Heptadecafluorooctane-1-sulfonyl)-N-methylglycine"
 MeFOSE	Perfluoroalkane sulfamido ethanols	C11F17SO3NH8	556.9953431			616.0092	24448-09-7	CN(CCO)S(=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F	"1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,8-Heptadecafluoro-N-(2-hydroxyethyl)-N-methyloctane-1-sulfonamide"
