@@ -23,8 +23,8 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
 
 #smiles and descriptors----
 
-SMILES_data = read_delim("data/Smiles_for_Target_PFAS.csv",
-                         delim = "\t",
+SMILES_data = read_delim("data/Smiles_for_Target_PFAS_semicolon.csv",
+                         delim = ";",
                          col_names = TRUE)
 
 #how many unique SMILES are there
