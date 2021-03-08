@@ -8,12 +8,14 @@ read_excel_allsheets <- function(filename, tibble = TRUE) {
     data_this_sheet = data_this_sheet %>%
       mutate(across(everything(), as.character))
     #print(data_this_sheet)
+    data_this_sheet = data_this_sheet %>%
+      group_by(Compound, Filename) %>%
+      summarise(Area = max(as.double(Area)%>%na.omit()),
+             RT = mean(as.double(`Actual RT`) %>% na.omit()),
+             `Theoretical Amt` = mean(as.double(str_replace(`Theoretical Amt`,pattern = ",", replacement = ".")) %>% na.omit() )) %>%
+      ungroup()
     data = data %>%
       bind_rows(data_this_sheet)
-    data = data %>%
-      select(Compound, RT, Area, Formula, `Theoretical Amt`)
-    data = data %>%
-      mutate(`Theoretical Amt` = str_replace(`Theoretical Amt`,pattern = ",", replacement = "."))
   }
   return(data)
 }

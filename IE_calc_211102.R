@@ -14,12 +14,24 @@ descs_names = readRDS("regressors/negative_descs.rds")
 
 #lcms data ----
 
-filename = "data/Batch 1 Semi Quant.xlsx"
+filename = "data/Batch 1 Semi Quant w frag.xlsx"
 Orbitrap_dataset_raw = read_excel_allsheets(filename)
+#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
 Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   na.omit(Area) %>%
   filter(Area != "N/F") %>%
   mutate(Area = as.numeric(Area))
+
+#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
+
+Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
+  group_by(Compound) %>%
+  mutate(`Theoretical Amt`=case_when(
+    Filename=="2020071205-cal21"~mean(`Theoretical Amt`[Filename=="2020071205-cal22"]),
+    TRUE~`Theoretical Amt`
+  ))%>%ungroup()
+
+#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
 
 #smiles and descriptors----
 
@@ -66,12 +78,13 @@ eluent = read_delim("data/eluent.csv",
 organic_modifier = "MeCN"
 pH.aq. = 7.0
 
+#descs_calc_PFOA %>% select(SMILES) %>% unique()
 
-data = Orbitrap_dataset_raw %>%
+data = Orbitrap_dataset_raw #%>%
   left_join(descs_calc_PFOA)
-  
 
-#check number of unique analytes
+#check number of unique analytes    
+#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
 #data %>% select(SMILES) %>% unique()
   
 
