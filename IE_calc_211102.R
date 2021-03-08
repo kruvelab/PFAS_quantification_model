@@ -80,7 +80,7 @@ pH.aq. = 7.0
 
 #descs_calc_PFOA %>% select(SMILES) %>% unique()
 
-data = Orbitrap_dataset_raw #%>%
+data = Orbitrap_dataset_raw %>%
   left_join(descs_calc_PFOA)
 
 #check number of unique analytes    
@@ -147,8 +147,8 @@ IE_slope_cor = ggplot(data = IE_pred) +
                            y = slope, 
                            text = Compound, 
                            color = Class)) +
-  scale_y_log10() +
-  facet_wrap(~Class)
+  scale_y_log10() #+
+  #facet_wrap(~Class)
 
 IE_slope_cor
 
