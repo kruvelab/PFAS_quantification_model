@@ -147,8 +147,8 @@ IE_slope_cor = ggplot(data = IE_pred) +
                            y = slope, 
                            text = Compound, 
                            color = Class)) +
-  scale_y_log10() #+
-  #facet_wrap(~Class)
+  scale_y_log10() +
+  facet_wrap(~Class)
 
 IE_slope_cor
 
