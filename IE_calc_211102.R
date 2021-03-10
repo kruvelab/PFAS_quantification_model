@@ -44,11 +44,11 @@ SMILES_data = SMILES_data %>%
   select(Compound, SMILES, Class) %>%
   na.omit()
 
-# descs_calc_PFOA = PaDEL_original(SMILES_data)
-# 
-# write_delim(descs_calc_PFOA,
-#             "data/descs_calc.csv",
-#             delim = ",")
+#descs_calc_PFOA = PaDEL_original(SMILES_data)
+ 
+#write_delim(descs_calc_PFOA,
+            # "data/descs_calc.csv",
+            # delim = ",")
 
 
 descs_calc_PFOA = read_delim("data/descs_calc.csv",
