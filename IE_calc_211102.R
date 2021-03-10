@@ -5,7 +5,7 @@ source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
+#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #regressor----
 
@@ -16,7 +16,6 @@ descs_names = readRDS("regressors/negative_descs.rds")
 
 filename = "data/Batch 1 Semi Quant w frag.xlsx"
 Orbitrap_dataset_raw = read_excel_allsheets(filename)
-#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
 Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   na.omit(Area) %>%
   filter(Area != "N/F") %>%
@@ -30,8 +29,6 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
     Filename=="2020071205-cal21"~mean(`Theoretical Amt`[Filename=="2020071205-cal22"]),
     TRUE~`Theoretical Amt`
   ))%>%ungroup()
-
-#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
 
 #smiles and descriptors----
 
@@ -72,9 +69,6 @@ descs_calc_PFOA = descs_calc_PFOA %>%
          MW = molecularmass(SMILES)) %>%
   ungroup()
 
-#check number of unique analytes
-#descs_calc_PFOA %>% select(SMILES) %>% unique()
-
 #eluent---
 eluent = read_delim("data/eluent.csv",
                     delim = ",",
@@ -83,15 +77,8 @@ eluent = read_delim("data/eluent.csv",
 organic_modifier = "MeCN"
 pH.aq. = 7.0
 
-#descs_calc_PFOA %>% select(SMILES) %>% unique()
-
 data = Orbitrap_dataset_raw %>%
   left_join(descs_calc_PFOA)
-
-#check number of unique analytes    
-#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
-#data %>% select(SMILES) %>% unique()
-  
 
 data = data %>%
   mutate(
@@ -105,7 +92,6 @@ data = data %>%
     surface_tension = surfacetension(organic,organic_modifier),
     polarity_index = polarityindex(organic,organic_modifier)) 
 
-#data %>% select(SMILES) %>% unique()
 training = data %>%
   filter(!is.na(SMILES)) %>%
   filter(`Theoretical Amt` != "N/F") %>%
