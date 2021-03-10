@@ -5,7 +5,7 @@ source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
+setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #regressor----
 
@@ -47,7 +47,12 @@ SMILES_data = SMILES_data %>%
   select(Compound, SMILES, Class) %>%
   na.omit()
 
-#descs_calc_PFOA = PaDEL_original(SMILES_data)
+# descs_calc_PFOA = PaDEL_original(SMILES_data)
+# 
+# write_delim(descs_calc_PFOA,
+#             "data/descs_calc.csv",
+#             delim = ",")
+
 
 descs_calc_PFOA = read_delim("data/descs_calc.csv",
                               delim = ",",
