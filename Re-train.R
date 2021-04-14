@@ -45,20 +45,20 @@ SMILES_data = SMILES_data %>%
   na.omit()
 
 descs_calc_PFOA = PaDEL_original(SMILES_data)
- 
+
 write_delim(descs_calc_PFOA,
             "data/descs_calc.csv",
             delim = ",")
 
 
 #descs_calc_PFOA = read_delim("data/descs_calc.csv",
-                              #delim = ",",
-                              #col_names = TRUE)
+#delim = ",",
+#col_names = TRUE)
 
 descs_calc_PFOA = descs_calc_PFOA %>%
   select(Compound, SMILES, 
          #all_of(descs_names),
-        everything())
+         everything())
 
 #check number of unique analytes
 #descs_calc_PFOA %>% select(SMILES) %>% unique()
@@ -82,19 +82,11 @@ data = Orbitrap_dataset_raw %>%
 
 data = data %>%
   mutate(
-    RT = as.numeric(RT))
-
-data = data %>%
-  group_by(Compound) %>%
-  mutate(RT = mean(RT)) %>%
-  ungroup()
-
-data = data %>%
-  mutate(
+    RT = as.numeric(RT),
     area_IC = Area*IC,
     organic_modifier = organic_modifier,
     pH.aq. = pH.aq.,
-    NH4 = 1, #1 if th ebuffer contains NH¤ ions , 0 if not. 
+    NH4 = 1, #1 if the buffer contains NH¤ ions , 0 if not. 
     organic = organicpercentage(eluent,RT),
     viscosity = viscosity(organic,organic_modifier),
     surface_tension = surfacetension(organic,organic_modifier),
@@ -119,7 +111,51 @@ training = training %>%
   group_by(SMILES) %>%
   mutate(slope = linear_regression(area_IC, `Theoretical Amt`)$slope) %>%
   ungroup()
-#print(training %>% select(Compound) %>% unique(), n=40)
+
+#converting slopes to logIE
+
+filename = "data/IE_training_data/190714_negative_model_logIE_data.csv"
+old_training_data = read_delim(filename,
+                               delim = ";",
+                               col_names = TRUE)
+
+old_training_data_filtered = old_training_data %>%
+  filter(organic_modifier=="MeCN")%>%
+  filter(name=="perfluorooctanesulfonic acid")%>%
+  filter(additive=="ammonium acetate")%>%
+  filter(pH_aq==7.8)
+
+IEPFOSvalue = old_training_data_filtered$logIE
+
+Anchor_slope = training %>% 
+  select(Compound,slope) %>%
+  unique()%>%
+  filter(Compound == "PFOS")
+
+#makes slopePFOS a value
+slopePFOS <- Anchor_slope$slope
+
+training = training %>%
+  mutate(RIE =slope/slopePFOS )%>%
+  mutate(RIE =log(RIE))%>%
+  mutate(IE =RIE + IEPFOSvalue)%>%
+  select(Compound,3:6,1452:1463, IE,slope,everything(),-RIE)
+
+datarbind = training%>%
+  select(1:17,-"Theoretical Amt", -Area, -area_IC, -IC, -Filename)%>%
+  unique()%>%
+  group_by(Compound) %>%
+  mutate(RT=mean(RT))%>%
+  ungroup()
+
+datarbind = datarbind%>%
+  group_by(Compound)%>%
+  mutate(polarity_index=mean(polarity_index))%>%
+  mutate(organic=mean(organic))%>%
+  mutate(viscosity=mean(viscosity))%>%
+  mutate(surface_tension=mean(surface_tension))%>%
+  ungroup()%>%
+  unique()
 
 IE_pred = training %>% 
   mutate(logIE_pred = 0) %>%
@@ -171,4 +207,5 @@ graph_slope_logP = ggplot(data = IE_pred) +
   facet_wrap(~Class)
 
 ggplotly(graph_slope_logP)
+
 
