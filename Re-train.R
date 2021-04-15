@@ -119,6 +119,10 @@ old_training_data = read_delim(filename,
                                delim = ";",
                                col_names = TRUE)
 
+old_training_data = old_training_data%>%
+  select(-pH_aq., -logIE_pred, -error_abs)
+
+
 old_training_data_filtered = old_training_data %>%
   filter(organic_modifier=="MeCN")%>%
   filter(name=="perfluorooctanesulfonic acid")%>%
@@ -156,6 +160,29 @@ datarbind = datarbind%>%
   mutate(surface_tension=mean(surface_tension))%>%
   ungroup()%>%
   unique()
+
+datarbindedit = datarbind%>%
+  rename(organic_modifier_percentage = organic)%>%
+  rename("name" = Compound)%>%
+  select(-RT)
+ 
+datarbindedit = datarbind%>%
+  mutate(additive = "ammoniumacetate",
+         additive_concentration_mM = 2,
+         logIE = IE,
+         instrument = "Orbitrap",
+         source = "ESI",
+         solvent = "MeCN",#placeholder
+         SPLIT = "TRUE")%>%#placeholder
+  select(-IE)
+  
+colorder = colnames(datarbindedit)
+
+old_training_data = old_training_data[,colorder]
+
+
+
+
 
 IE_pred = training %>% 
   mutate(logIE_pred = 0) %>%
