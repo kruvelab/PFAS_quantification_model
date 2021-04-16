@@ -120,14 +120,14 @@ old_training_data = read_delim(filename,
                                col_names = TRUE)
 
 old_training_data = old_training_data%>%
-  select(-pH_aq., -logIE_pred, -error_abs)
+  select(-pH_aq, -logIE_pred, -error_abs)
 
 
 old_training_data_filtered = old_training_data %>%
-  filter(organic_modifier=="MeCN")%>%
-  filter(name=="perfluorooctanesulfonic acid")%>%
-  filter(additive=="ammonium acetate")%>%
-  filter(pH_aq==7.8)
+  filter(organic_modifier=="MeCN",
+  name=="perfluorooctanesulfonic acid",
+  additive=="ammonium acetate",
+  pH.aq.==7.8)
 
 IEPFOSvalue = old_training_data_filtered$logIE
 
@@ -140,9 +140,9 @@ Anchor_slope = training %>%
 slopePFOS <- Anchor_slope$slope
 
 training = training %>%
-  mutate(RIE =slope/slopePFOS )%>%
-  mutate(RIE =log(RIE))%>%
-  mutate(IE =RIE + IEPFOSvalue)%>%
+  mutate(RIE =slope/slopePFOS,
+  RIE =log(RIE),
+  IE =RIE + IEPFOSvalue)%>%
   select(Compound,3:6,1452:1463, IE,slope,everything(),-RIE)
 
 datarbind = training%>%
@@ -154,19 +154,19 @@ datarbind = training%>%
 
 datarbind = datarbind%>%
   group_by(Compound)%>%
-  mutate(polarity_index=mean(polarity_index))%>%
-  mutate(organic=mean(organic))%>%
-  mutate(viscosity=mean(viscosity))%>%
-  mutate(surface_tension=mean(surface_tension))%>%
+  mutate(polarity_index=mean(polarity_index),
+  organic=mean(organic),
+  viscosity=mean(viscosity),
+  surface_tension=mean(surface_tension))%>%
   ungroup()%>%
   unique()
 
 datarbindedit = datarbind%>%
-  rename(organic_modifier_percentage = organic)%>%
-  rename("name" = Compound)%>%
-  select(-RT)
+  rename(organic_modifier_percentage = organic,
+  "name" = Compound)%>%
+  select(-RT, -slope)
  
-datarbindedit = datarbind%>%
+datarbindedit = datarbindedit%>%
   mutate(additive = "ammoniumacetate",
          additive_concentration_mM = 2,
          logIE = IE,
@@ -177,10 +177,12 @@ datarbindedit = datarbind%>%
   select(-IE)
   
 colorder = colnames(datarbindedit)
-
 old_training_data = old_training_data[,colorder]
 
+old_training_data$SPLIT = as.character(old_training_data$SPLIT)
 
+datarbindedit = datarbindedit%>%
+  rbind(old_training_data)
 
 
 
