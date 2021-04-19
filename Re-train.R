@@ -1,3 +1,5 @@
+library(caret)
+library(xgboost)
 library(tidyverse)
 library(plotly)
 setwd("~/GitHub/PFOA_semi_quant")
@@ -182,37 +184,85 @@ old_training_data = old_training_data[,colorder]
 old_training_data$SPLIT = as.character(old_training_data$SPLIT)
 
 datarbindedit = datarbindedit%>%
-  rbind(old_training_data)
+  rbind(old_training_data)%>%
+  unique()%>%
+  select(-SPLIT)
 
+forsplit <- datarbindedit%>%
+  select(name) %>%
+  unique()
 
-
-IE_pred = training %>% 
-  mutate(logIE_pred = 0) %>%
+set.seed(123) 
+split_first <- sample.split(forsplit$name, SplitRatio = 0.8)
+train <- forsplit %>%
+  filter(split_first == TRUE)%>%
+  mutate(split_first = "TRUE") %>%
+  left_join(datarbindedit) %>%
+  unique()%>%
+  na.omit()
+test <- forsplit %>%
+  filter(split_first == FALSE)%>%
+  mutate(split_first = "FALSE") %>%
+  left_join(datarbindedit) %>%
+  unique()%>%
+  na.omit()
+datarbindedit <- rbind(train,test) %>%
   na.omit()
 
+#Rat_fplist <- colnames(AllData_cleaned_for_RF)
+
+#Training the model
+set.seed(123)
+folds = groupKFold(train$name, k = 5) #k - how many times 
+fitControl <- trainControl(method = "boot", index = folds)
+
+
+#this fit control is for when there is only one value per compound
+
+# fitControl <- trainControl(
+#   method = "repeatedcv",
+#   number = 2,  
+#   repeats = 1)
+
+RFR <- 
+  train(`logIE`~ ., data = datarbindedit%>%
+          select(-instrument, -source, -split_first,-name),
+        method = "xgbTree",
+        trControl = fitControl)
+
+datarbind_with_predicted <- datarbindedit %>%
+  mutate( logIE_pred = predict(RFR, newdata = datarbindedit))
+
+
+#IE_pred = datarbindedit %>% 
+  #mutate(logIE_pred = 0) %>%
+  #na.omit()
+
 #print(IE_pred %>% select(Compound) %>% unique(), n=40)
 
-prediction =  predict(regressor, newdata = IE_pred, predict.all = TRUE)
-prediction = prediction$aggregate
-IE_pred <- IE_pred %>%
-  mutate(logIE_pred = prediction) %>%
-  select(SMILES,logIE_pred, everything())
+#prediction =  predict(RFR, newdata = IE_pred, predict.all = TRUE)
+#prediction = prediction$aggregate
+# IE_pred <- IE_pred %>%
+#   mutate(logIE_pred = prediction) %>%
+#   select(SMILES,logIE_pred, everything())
 
 #print(IE_pred %>% select(Compound) %>% unique(), n=40)
 
-IE_pred = IE_pred %>%
-  left_join(SMILES_data) %>%
-  select(Compound, SMILES, Class, logIE_pred, slope, everything())
+# IE_pred = IE_pred %>%
+#   left_join(SMILES_data) %>%
+#   select(Compound, SMILES, Class, logIE_pred, slope, everything())
 
 #print(IE_pred %>% select(Compound) %>% unique(), n=40)
 
-IE_slope_cor = ggplot(data = IE_pred) +
-  geom_point(mapping = aes(x = logIE_pred,
-                           y = slope, 
-                           text = Compound, 
-                           color = Class)) +
-  scale_y_log10() +
-  facet_wrap(~Class)
+IE_slope_cor = ggplot(data = datarbind_with_predicted) +
+  geom_point(mapping = aes(x = logIE,#see if pred and actual are correlated
+                           y = logIE_pred, 
+                           #text = name)) + 
+                           color = name)) +
+  #scale_y_log10() +
+  theme(legend.position="none")+
+  geom_abline(slope = 1, intercept = 0)+
+  facet_wrap(~split_first)
 
 IE_slope_cor
 
