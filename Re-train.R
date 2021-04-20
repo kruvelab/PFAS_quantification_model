@@ -23,8 +23,6 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   filter(Area != "N/F") %>%
   mutate(Area = as.numeric(Area))
 
-#Orbitrap_dataset_raw %>% select(Compound) %>% unique()
-
 Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   group_by(Compound) %>%
   mutate(`Theoretical Amt`=case_when(
@@ -34,36 +32,30 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
 
 #smiles and descriptors----
 
-SMILES_data = read_delim("data/Smiles_for_Target_PFAS_semicolon.csv",
-                         delim = ";",
-                         col_names = TRUE)
+ SMILES_data = read_delim("data/Smiles_for_Target_PFAS_semicolon.csv",
+                          delim = ";",
+                          col_names = TRUE)
 
-#how many unique SMILES are there
-#SMILES_data %>% select(SMILES) %>% unique()
+ SMILES_data = SMILES_data %>%
+   rename(Compound = ID) %>%
+   select(Compound, SMILES, Class) %>%
+   na.omit()
 
-SMILES_data = SMILES_data %>%
-  rename(Compound = ID) %>%
-  select(Compound, SMILES, Class) %>%
-  na.omit()
+ descs_calc_PFOA = PaDEL_original(SMILES_data)
 
-descs_calc_PFOA = PaDEL_original(SMILES_data)
+ write_delim(descs_calc_PFOA,
+             "data/descs_calc.csv",
+             delim = ",")
 
-write_delim(descs_calc_PFOA,
-            "data/descs_calc.csv",
-            delim = ",")
-
-
+##############################################################3
 #descs_calc_PFOA = read_delim("data/descs_calc.csv",
 #delim = ",",
 #col_names = TRUE)
-
+#############################################################
 descs_calc_PFOA = descs_calc_PFOA %>%
-  select(Compound, SMILES, 
+  select(Compound, SMILES,
          #all_of(descs_names),
          everything())
-
-#check number of unique analytes
-#descs_calc_PFOA %>% select(SMILES) %>% unique()
 
 descs_calc_PFOA = descs_calc_PFOA %>%
   group_by(SMILES) %>%
@@ -114,7 +106,7 @@ training = training %>%
   mutate(slope = linear_regression(area_IC, `Theoretical Amt`)$slope) %>%
   ungroup()
 
-#converting slopes to logIE
+####convert slopes to logIE
 
 filename = "data/IE_training_data/190714_negative_model_logIE_data.csv"
 old_training_data = read_delim(filename,
@@ -138,14 +130,15 @@ Anchor_slope = training %>%
   unique()%>%
   filter(Compound == "PFOS")
 
-#makes slopePFOS a value
-slopePFOS <- Anchor_slope$slope
+slopePFOS <- Anchor_slope$slope #make slopePFOS a single value
 
 training = training %>%
   mutate(RIE =slope/slopePFOS,
   RIE =log(RIE),
   IE =RIE + IEPFOSvalue)%>%
   select(Compound,3:6,1452:1463, IE,slope,everything(),-RIE)
+
+####prepping + joining old dataset to new
 
 datarbind = training%>%
   select(1:17,-"Theoretical Amt", -Area, -area_IC, -IC, -Filename)%>%
@@ -192,6 +185,41 @@ forsplit <- datarbindedit%>%
   select(name) %>%
   unique()
 
+######re-calculating and joining descriptors
+
+descs_recalc = datarbindedit %>%
+  rename(Compound = name) %>%
+  select(Compound, SMILES) %>%
+  unique()%>%
+  na.omit()
+
+descs_recalc_go = PaDEL_original(descs_recalc)
+
+datarbindedit = datarbindedit %>%
+  left_join(descs_recalc_go)
+
+write_delim(descs_recalc_go,
+            "data/descs_recalc.csv",
+            delim = ",")
+
+datarbindedit = datarbindedit %>%
+  select(Compound, SMILES, 
+         #all_of(descs_names),
+         everything())
+
+datarbindedit = datarbindedit %>%
+  group_by(SMILES) %>%
+  mutate(IC = isotopedistribution(SMILES),
+         MW = molecularmass(SMILES)) %>%
+  ungroup()
+
+#cleaning data
+
+
+
+
+#splitting
+
 set.seed(123) 
 split_first <- sample.split(forsplit$name, SplitRatio = 0.8)
 train <- forsplit %>%
@@ -208,8 +236,6 @@ test <- forsplit %>%
   na.omit()
 datarbindedit <- rbind(train,test) %>%
   na.omit()
-
-#Rat_fplist <- colnames(AllData_cleaned_for_RF)
 
 #Training the model
 set.seed(123)
