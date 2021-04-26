@@ -215,8 +215,29 @@ datarbindedit = datarbindedit %>%
 
 #cleaning data
 
+datarbindeditAA = datarbindedit %>%
+  dplyr::select(-c(Compound, SMILES, name, organic_modifier,additive, instrument, source, solvent))%>%
+  select_if(~sum(is.na(.))< 10,)%>%
+  drop_na()
+ 
+datarbindeditAAA = datarbindeditAA %>%
+  select(-c(nearZeroVar(datarbindeditAA))) 
+    
+correlationMatrix <- cor(datarbindeditAAA, use = "complete.obs")
 
+highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.75)
 
+datarbindeditclean <- datarbindeditAAA %>%
+  dplyr::select(-highlyCorrelated)%>%
+  dplyr::mutate(name = datarbindedit$name,
+                SMILES = datarbindedit$SMILES,
+                organic_modifier = datarbindedit$organic_modifier,
+                additive = datarbindedit$additive,
+                instrument = datarbindedit$instrument,
+                source = datarbindedit$source,
+                solvent = datarbindedit$solvent)%>%
+  select(name,SMILES,organic_modifier,organic_modifier_percentage,
+         additive, additive_concentration_mM, instrument,source,solvent, everything())
 
 #splitting
 
@@ -225,16 +246,16 @@ split_first <- sample.split(forsplit$name, SplitRatio = 0.8)
 train <- forsplit %>%
   filter(split_first == TRUE)%>%
   mutate(split_first = "TRUE") %>%
-  left_join(datarbindedit) %>%
+  left_join(datarbindeditclean) %>%
   unique()%>%
   na.omit()
 test <- forsplit %>%
   filter(split_first == FALSE)%>%
   mutate(split_first = "FALSE") %>%
-  left_join(datarbindedit) %>%
+  left_join(datarbindeditclean) %>%
   unique()%>%
   na.omit()
-datarbindedit <- rbind(train,test) %>%
+datarbindeditclean <- rbind(train,test) %>%
   na.omit()
 
 #Training the model
@@ -251,13 +272,13 @@ fitControl <- trainControl(method = "boot", index = folds)
 #   repeats = 1)
 
 RFR <- 
-  train(`logIE`~ ., data = datarbindedit%>%
+  train(`logIE`~ ., data = datarbindeditclean%>%
           select(-instrument, -source, -split_first,-name),
         method = "xgbTree",
         trControl = fitControl)
 
-datarbind_with_predicted <- datarbindedit %>%
-  mutate( logIE_pred = predict(RFR, newdata = datarbindedit))
+datarbind_with_predicted <- datarbindeditclean %>%
+  mutate( logIE_pred = predict(RFR, newdata = datarbindeditclean))
 
 
 #IE_pred = datarbindedit %>% 
