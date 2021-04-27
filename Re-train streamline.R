@@ -164,6 +164,9 @@ datarbindedit = datarbindedit%>%
   unique()%>%
   select(-SPLIT)
 
+#removing adducts from dataset
+datarbindedit = datarbindedit[-c(15,24),]
+
 forsplit <- datarbindedit%>%
   select(name) %>%
   unique()
@@ -260,27 +263,6 @@ RFR <-
 
 datarbind_with_predicted <- datarbindeditclean %>%
   mutate( logIE_pred = predict(RFR, newdata = datarbindeditclean))
-
-
-#IE_pred = datarbindedit %>% 
-  #mutate(logIE_pred = 0) %>%
-  #na.omit()
-
-#print(IE_pred %>% select(Compound) %>% unique(), n=40)
-
-#prediction =  predict(RFR, newdata = IE_pred, predict.all = TRUE)
-#prediction = prediction$aggregate
-# IE_pred <- IE_pred %>%
-#   mutate(logIE_pred = prediction) %>%
-#   select(SMILES,logIE_pred, everything())
-
-#print(IE_pred %>% select(Compound) %>% unique(), n=40)
-
-# IE_pred = IE_pred %>%
-#   left_join(SMILES_data) %>%
-#   select(Compound, SMILES, Class, logIE_pred, slope, everything())
-
-#print(IE_pred %>% select(Compound) %>% unique(), n=40)
 
 IE_slope_cor = ggplot(data = datarbind_with_predicted) +
   geom_point(mapping = aes(x = logIE,#see if pred and actual are correlated
