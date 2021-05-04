@@ -60,9 +60,6 @@ descs_calc_PFOA = descs_calc_PFOA %>%
          #all_of(descs_names),
         everything())
 
-#check number of unique analytes
-#descs_calc_PFOA %>% select(SMILES) %>% unique()
-
 descs_calc_PFOA = descs_calc_PFOA %>%
   group_by(SMILES) %>%
   mutate(IC = isotopedistribution(SMILES),

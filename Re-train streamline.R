@@ -9,11 +9,6 @@ source("code/compound_eluent.R")
 
 #setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
-#regressor----
-
-regressor = readRDS("regressors/regressor_neg_new.rds")
-descs_names = readRDS("regressors/negative_descs.rds")
-
 #lcms data ----
 
 filename = "data/Batch 1 Semi Quant w frag.xlsx"
@@ -76,7 +71,6 @@ training = data %>%
   filter(`Theoretical Amt` != "N/A") %>%
   mutate(`Theoretical Amt` = as.numeric(`Theoretical Amt`)) %>%
   mutate(`Theoretical Amt` = `Theoretical Amt`/MW) #correct with MW
-#print(training %>% select(Compound) %>% unique(), n=40)
 
 ggplot(data = training) +
   geom_point(mapping = aes(x = `Theoretical Amt`,
@@ -187,6 +181,8 @@ datarbindedit = datarbindedit %>%
 write_delim(descs_recalc_go,
             "data/descs_recalc.csv",
             delim = ",")
+saveRDS(descs_recalc_go,
+        "descs_PFASadd.rds")
 
 datarbindedit = datarbindedit %>%
   select(Compound, SMILES,everything())
@@ -205,7 +201,7 @@ datarbindeditAA = datarbindedit %>%
   drop_na()
  
 datarbindeditAAA = datarbindeditAA %>%
-  select(-c(nearZeroVar(datarbindeditAA))) 
+  select(-c(nearZeroVar(datarbindeditAA, freqCut = 80/20))) 
     
 correlationMatrix <- cor(datarbindeditAAA, use = "complete.obs")
 
@@ -213,13 +209,8 @@ highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.75)
 
 datarbindeditclean <- datarbindeditAAA %>%
   dplyr::select(-highlyCorrelated)%>%
-  dplyr::mutate(name = datarbindedit$name,
-                SMILES = datarbindedit$SMILES,
-                organic_modifier = datarbindedit$organic_modifier,
-                additive = datarbindedit$additive,
-                instrument = datarbindedit$instrument,
-                source = datarbindedit$source,
-                solvent = datarbindedit$solvent)%>%
+  bind_cols(datarbindedit %>%
+              select(SMILES, name, organic_modifier,additive, instrument, source, solvent))%>%
   select(name,SMILES,organic_modifier,organic_modifier_percentage,
          additive, additive_concentration_mM, instrument,source,solvent, everything())
 
@@ -233,6 +224,7 @@ train <- forsplit %>%
   left_join(datarbindeditclean) %>%
   unique()%>%
   na.omit()
+
 test <- forsplit %>%
   filter(split_first == FALSE)%>%
   mutate(split_first = "FALSE") %>%
@@ -247,17 +239,9 @@ set.seed(123)
 folds = groupKFold(train$name, k = 5) #k - how many times 
 fitControl <- trainControl(method = "boot", index = folds)
 
-
-#this fit control is for when there is only one value per compound
-
-# fitControl <- trainControl(
-#   method = "repeatedcv",
-#   number = 2,  
-#   repeats = 1)
-
 RFR <- 
   train(`logIE`~ ., data = datarbindeditclean%>%
-          select(-instrument, -source, -split_first,-name),
+          select(-instrument, -source, -split_first,-name,-SMILES),
         method = "xgbTree",
         trControl = fitControl)
 
@@ -276,25 +260,33 @@ IE_slope_cor = ggplot(data = datarbind_with_predicted) +
 
 IE_slope_cor
 
-graph_1sttryPFAScal=ggplotly(IE_slope_cor)
-graph_1sttryPFAScal
+IE_slope_cor_Thomas = ggplot(data = datarbind_with_predicted %>%
+                        filter(instrument == "Orbitrap")) +
+  geom_point(mapping = aes(x = logIE,#see if pred and actual are correlated
+                           y = logIE_pred, 
+                           #text = name)) + 
+                           color = name)) +
+  #scale_y_log10() +
+  theme(legend.position="none")+
+  geom_abline(slope = 1, intercept = 0)+
+  facet_wrap(~split_first)
 
-htmlwidgets::saveWidget(plotly::as_widget(graph_1sttryPFAScal), "1stryPFAScal.html")
+IE_slope_cor_Thomas
 
-slope_RT_cor = ggplot(data = IE_pred) +
-  geom_point(mapping = aes(x = as.numeric(RT),
-                           y = slope, 
-                           text = Compound)) +
-  scale_y_log10()
+rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == TRUE))$logIE,
+     (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == TRUE))$logIE_pred)
+#0.25
+rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == FALSE))$logIE,
+     (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == FALSE))$logIE_pred)
+#0.34
 
-ggplotly(slope_RT_cor)
+saveRDS(RFR,
+        "PFAS_FOREST.rds")
 
-graph_slope_logP = ggplot(data = IE_pred) +
-  geom_point(mapping = aes(x = ALogP,
-                           y = slope, 
-                           text = Compound)) +
-  facet_wrap(~Class)
 
-ggplotly(graph_slope_logP)
 
+graph_retrainPFAS=ggplotly(IE_slope_cor_Thomas)
+graph_retrainPFAS
+
+htmlwidgets::saveWidget(plotly::as_widget(graph_retrainPFAS), "1stryPFAScal.html")
 
