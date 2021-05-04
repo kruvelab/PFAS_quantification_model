@@ -283,8 +283,6 @@ rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first
 saveRDS(RFR,
         "PFAS_FOREST.rds")
 
-
-
 graph_retrainPFAS=ggplotly(IE_slope_cor_Thomas)
 graph_retrainPFAS
 
