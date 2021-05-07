@@ -33,7 +33,7 @@ PaDEL_original = function(standards) {
   standards = standards %>%
     left_join(SMILES_list)
   
-  write_delim(SMILES_list %>% select(SMILES),
+  write_delim(SMILES_list %>% select(SMILES) %>% unique(),
               "SMILES.smi",
               col_names = FALSE)
   

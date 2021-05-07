@@ -10,7 +10,7 @@ source("code/compound_eluent.R")
 #regressor----
 
 regressor = readRDS("regressors/PFAS_FOREST.rds")
-descs_names = readRDS("regressors/descs_PFASadd.rds")
+
 #lcms data ----
 
 filename = "data/Batch 1 Semi Quant w frag.xlsx"
@@ -119,6 +119,7 @@ IE_pred = training %>%
 IE_pred = IE_pred%>%
 unique()
 
+#remove adducts
 IE_pred = IE_pred[-c(14,23),]
 
 # prediction =  predict(regressor, newdata = IE_pred, predict.all = TRUE)
@@ -131,7 +132,7 @@ IE_pred = IE_pred %>%
   left_join(SMILES_data) %>%
   select(name, SMILES, Class, logIE_pred, slope, everything(),-Compound)
 
-correlation_factor = lm(log10(slope)~logIE_pred,data = IE_pred)#its a model?
+correlation_factor = lm(log10(slope)~logIE_pred,data = IE_pred)
 
 IE_pred = IE_pred %>%
 mutate(response_factor = correlation_factor$coefficients[2]*logIE_pred +
@@ -150,3 +151,77 @@ Conc._error_boxplots = ggplot(data = IE_pred) +
 Conc._error_boxplots +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90))
+
+concentration_cor_Thomas = ggplot(data = IE_pred %>%
+                               filter(instrument == "Orbitrap")) +
+  geom_point(mapping = aes(x = `Theoretical Amt`,#see if pred and actual are correlated
+                           y = pred_conc., 
+                           #text = name)) + 
+                           color = name)) +
+  scale_y_log10() +
+  scale_x_log10() +
+  theme(legend.position="none")+
+  geom_abline(slope = 1, intercept = 0)+
+  facet_wrap(~Class)
+
+concentration_cor_Thomas
+
+#predicting concentrations for detected suspects
+suspSMILES_data = read_delim("data/sus data.csv",
+                         delim = ",",
+                         col_names = TRUE,)
+
+#descs_PFAS_suspects = PaDEL_original(suspSMILES_data %>% select(SMILES) %>% unique())
+
+# write_delim(descs_PFAS_suspects,
+#             "data/descs_PFAS_suspects.csv",
+#             delim = ",")
+
+suspSMILES_data = suspSMILES_data %>%
+  group_by(SMILES) %>%
+  mutate(IC = isotopedistribution(SMILES),
+         MW = molecularmass(SMILES)) %>%
+  ungroup()
+  
+suspSMILES_data = suspSMILES_data %>%
+  mutate(
+    RT = as.numeric(RT),
+    area_IC = Area*IC,
+    organic_modifier = organic_modifier,
+    pH.aq. = pH.aq.,
+    NH4 = 1, #1 if the buffer contains NH¤ ions , 0 if not. 
+    organic = organicpercentage(eluent,RT),
+    viscosity = viscosity(organic,organic_modifier),
+    surface_tension = surfacetension(organic,organic_modifier),
+    polarity_index = polarityindex(organic,organic_modifier)) 
+
+suspSMILES_data =  suspSMILES_data %>%
+  left_join(descs_PFAS_suspects, by = "SMILES")%>%
+  rename(organic_modifier_percentage = organic)%>%
+  mutate(additive = "ammoniumacetate",
+         additive_concentration_mM = 2,
+         instrument = "Orbitrap",
+         source = "ESI",
+         solvent = "MeCN",#placeholder
+         SPLIT = "TRUE")%>%#placeholder
+  select(name,SMILES,everything())%>%
+  na.omit()
+
+suspSMILES_data =  suspSMILES_data %>%
+  mutate(logIE_pred2 = predict(regressor, newdata = suspSMILES_data, predict.all = TRUE)) %>%
+  select(SMILES,logIE_pred2, everything())
+
+suspSMILES_data =  suspSMILES_data %>%
+   mutate(response_factor2 = correlation_factor$coefficients[2]*logIE_pred2 +
+            correlation_factor$coefficients[1])%>%
+   mutate(pred_conc. = area_IC/(10^response_factor2))
+
+suspSMILES_data =  suspSMILES_data %>%
+  mutate(pred_conc_pg_uL = pred_conc.*MW.x)%>%
+  select(pred_conc_pg_uL, everything())
+
+#convert to F equivalent (in excel)
+
+
+
+
