@@ -41,6 +41,9 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   mutate(IC = isotopedistribution(SMILES),
          MW = molecularmass(SMILES)) %>%
   ungroup()
+ 
+ #removing adducts from dataset
+ SMILES_data = SMILES_data[-c(17,26),]
 
 #eluent---
 eluent = read_delim("data/eluent.csv",
@@ -52,6 +55,8 @@ pH.aq. = 7.0
 
 data = Orbitrap_dataset_raw %>%
   left_join(SMILES_data)
+
+#print(data %>% select(SMILES) %>% unique())
 
 data = data %>%
   mutate(
@@ -158,9 +163,6 @@ datarbindedit = datarbindedit%>%
   unique()%>%
   select(-SPLIT)
 
-#removing adducts from dataset
-datarbindedit = datarbindedit[-c(15,24),]
-
 forsplit <- datarbindedit%>%
   select(name) %>%
   unique()
@@ -240,10 +242,13 @@ folds = groupKFold(train$name, k = 5) #k - how many times
 fitControl <- trainControl(method = "boot", index = folds)
 
 RFR <- 
-  train(`logIE`~ ., data = datarbindeditclean%>%
+  train(`logIE`~ ., data = train %>%
           select(-instrument, -source, -split_first,-name,-SMILES),
         method = "xgbTree",
         trControl = fitControl)
+
+saveRDS(RFR,
+        "regressors/PFAS_FOREST.rds")
 
 datarbind_with_predicted <- datarbindeditclean %>%
   mutate( logIE_pred = predict(RFR, newdata = datarbindeditclean))
@@ -273,15 +278,20 @@ IE_slope_cor_Thomas = ggplot(data = datarbind_with_predicted %>%
 
 IE_slope_cor_Thomas
 
+rmse((datarbind_with_predicted %>% filter(split_first == TRUE))$logIE,
+     (datarbind_with_predicted %>% filter(split_first == TRUE))$logIE_pred)
+#0.22
+rmse((datarbind_with_predicted %>% filter(split_first == FALSE))$logIE,
+     (datarbind_with_predicted %>% filter(split_first == FALSE))$logIE_pred)
+#0.60
+
+
 rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == TRUE))$logIE,
      (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == TRUE))$logIE_pred)
-#0.25
+#0.04
 rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == FALSE))$logIE,
      (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == FALSE))$logIE_pred)
-#0.34
-
-saveRDS(RFR,
-        "regressor/PFAS_FOREST.rds")
+#0.48
 
 graph_retrainPFAS=ggplotly(IE_slope_cor_Thomas)
 graph_retrainPFAS

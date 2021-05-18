@@ -15,6 +15,12 @@ regressor = readRDS("regressors/PFAS_FOREST.rds")
 
 filename = "data/Batch 1 Semi Quant w frag.xlsx"
 Orbitrap_dataset_raw = read_excel_allsheets(filename)
+
+Spiked_samples = Orbitrap_dataset_raw %>%
+  filter(Filename == "QCN-CL" | Filename == "QCN-BL" | Filename == "QCN-AL") %>%
+  select(-`Theoretical Amt`) %>%
+  na.omit()
+
 Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   na.omit(Area) %>%
   filter(Area != "N/F") %>%
@@ -221,6 +227,8 @@ suspSMILES_data =  suspSMILES_data %>%
   select(pred_conc_pg_uL, everything())
 
 #convert to F equivalent (in excel)
+
+
 
 
 
