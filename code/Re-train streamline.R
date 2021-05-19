@@ -2,6 +2,7 @@ library(caret)
 library(xgboost)
 library(tidyverse)
 library(plotly)
+library(plyr)
 setwd("~/GitHub/PFOA_semi_quant")
 source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
@@ -253,13 +254,19 @@ saveRDS(RFR,
 datarbind_with_predicted <- datarbindeditclean %>%
   mutate( logIE_pred = predict(RFR, newdata = datarbindeditclean))
 
-IE_slope_cor = ggplot(data = datarbind_with_predicted) +
-  geom_point(mapping = aes(x = logIE,#see if pred and actual are correlated
-                           y = logIE_pred, 
-                           #text = name)) + 
-                           color = name)) +
+datarbind_with_predicted <- datarbind_with_predicted %>%
+  arrange(instrument)
+
+IE_slope_cor = ggplot(data = datarbind_with_predicted, aes(logIE, logIE_pred)) +
+  geom_point(aes(color = instrument),
+             alpha = 0.5,
+             size = 3) +
+  scale_color_manual(breaks = c("Orbitrap","Agilent XCT","Agilent 6495", "Thermo LTQ"),
+  values = c("blue", "light grey", "light grey","light grey"))+
+  
   #scale_y_log10() +
   theme(legend.position="none")+
+  theme_classic()+
   geom_abline(slope = 1, intercept = 0)+
   facet_wrap(~split_first)
 
