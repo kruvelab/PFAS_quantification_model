@@ -5,19 +5,17 @@ source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
 
-#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
-
 #regressor----
 
 regressor = readRDS("regressors/PFAS_FOREST.rds")
 
 #lcms data ----
 
-filename = "data/Batch 1 Semi Quant w frag.xlsx"
+filename = "data/Batch 1 Semi Quant w frag PL4 rep.xlsx"
 Orbitrap_dataset_raw = read_excel_allsheets(filename)
 
 Spiked_samples = Orbitrap_dataset_raw %>%
-  filter(Filename == "QCN-CL" | Filename == "QCN-BL" | Filename == "QCN-AL") %>%
+  filter(Filename == "QCN-CL" | Filename == "QCN-BL" | Filename == "QCN-AL" | Filename == "PL-4") %>%
   select(-`Theoretical Amt`) %>%
   na.omit()
 
@@ -43,6 +41,9 @@ SMILES_data = SMILES_data %>%
   rename(Compound = ID) %>%
   select(Compound, SMILES, Class) %>%
   na.omit()
+
+#remove adducts
+SMILES_data = SMILES_data[-c(17,26),]
 
 descs_calc_PFAS = PaDEL_original(SMILES_data)
 
@@ -125,9 +126,6 @@ IE_pred = training %>%
 IE_pred = IE_pred%>%
 unique()
 
-#remove adducts
-IE_pred = IE_pred[-c(14,23),]
-
 # prediction =  predict(regressor, newdata = IE_pred, predict.all = TRUE)
 # prediction = prediction$aggregate
 IE_pred <- IE_pred %>%
@@ -171,6 +169,62 @@ concentration_cor_Thomas = ggplot(data = IE_pred %>%
   facet_wrap(~Class)
 
 concentration_cor_Thomas
+
+#predict concentrations for spiked QC samples
+
+Spiked_samples = Spiked_samples %>%
+  rename("Sample ID" = Filename,
+         name = Compound)
+
+IE_prededit <- IE_pred %>%
+  select(name, SMILES, logIE_pred,IC,MW)
+
+IE_prededit <- IE_prededit %>%
+  unique()
+
+blank_areas = Spiked_samples %>%
+  select(name) %>%
+  unique() %>%
+  left_join(Spiked_samples %>% 
+              filter(`Sample ID` == "PL-4") %>%
+              select(name, Area)) %>%
+  mutate(Area = case_when(
+    is.na(Area) ~ 0,
+    TRUE ~ Area)) %>%
+  rename(Area_background = Area) 
+
+Spiked_samples = Spiked_samples %>%
+  left_join(IE_prededit) %>%
+  left_join(blank_areas) %>%
+  mutate(Area = Area - Area_background,
+         area_IC = Area*IC)
+
+Spiked_samples = Spiked_samples %>%
+  mutate(response_factor3 = correlation_factor$coefficients[2]*logIE_pred +
+           correlation_factor$coefficients[1])%>%
+  mutate(pred_conc. = area_IC/(10^response_factor3))
+
+Spiked_samples = Spiked_samples %>%
+  mutate(pred_conc_pg_uL = pred_conc.*MW)%>%
+  select(pred_conc_pg_uL, everything())%>%  
+  mutate(pred_conc_ng = case_when(
+    `Sample ID` == "QCN-AL" ~ (pred_conc_pg_uL*1097.2010178117)/1000,
+    `Sample ID` == "QCN-BL" ~ (pred_conc_pg_uL*961.704834605598)/1000,
+    `Sample ID` == "QCN-CL" ~ (pred_conc_pg_uL*952.162849872773)/1000,
+    TRUE ~ (pred_conc_pg_uL*1000)/1000))%>%
+  select(pred_conc_ng, , everything())
+
+ggplot(data = Spiked_samples %>%
+         filter(`Sample ID` != "PL-4"), 
+       mapping = aes(x = name,
+                     y = pred_conc_ng,
+                     fill = `Sample ID`)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  geom_abline(slope = 0, intercept = 5) +
+  labs(x = "") +
+  theme(axis.text.x = element_text(angle = 90, 
+                                   vjust = 0.5,
+                                   hjust = 1))
 
 #predicting concentrations for detected suspects
 suspSMILES_data = read_delim("data/sus data.csv",
@@ -228,7 +282,7 @@ suspSMILES_data =  suspSMILES_data %>%
 
 #convert to F equivalent (in excel)
 
-
+#dataset[Filename == "Spiked sample"]$Area - dataset[Filename == "Blank"]$Area 
 
 
 

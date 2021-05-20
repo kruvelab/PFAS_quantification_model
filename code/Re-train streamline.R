@@ -2,13 +2,10 @@ library(caret)
 library(xgboost)
 library(tidyverse)
 library(plotly)
-library(plyr)
 setwd("~/GitHub/PFOA_semi_quant")
 source("code/PaDEL_descs_calculator.R")
 source("code/reading_excel.R")
 source("code/compound_eluent.R")
-
-#setwd("C:/Users/annel/Nextcloud/mudeli script ja failid/PFOA_semi_quant/PFOA_semi_quant")
 
 #lcms data ----
 
@@ -24,7 +21,8 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   mutate(`Theoretical Amt`=case_when(
     Filename=="2020071205-cal21"~mean(`Theoretical Amt`[Filename=="2020071205-cal22"]),
     TRUE~`Theoretical Amt`
-  ))%>%ungroup()
+  ))%>%
+  ungroup()
 
 #smiles----
 
@@ -257,13 +255,24 @@ datarbind_with_predicted <- datarbindeditclean %>%
 datarbind_with_predicted <- datarbind_with_predicted %>%
   arrange(instrument)
 
-IE_slope_cor = ggplot(data = datarbind_with_predicted, aes(logIE, logIE_pred)) +
-  geom_point(aes(color = instrument),
+
+datarbind_with_predicted$split_first = factor(datarbind_with_predicted$split_first,
+                                  levels = c(TRUE, FALSE),
+                                  labels = c("Training set", "Test set"))
+
+IE_slope_cor = ggplot() +
+  geom_point(data = datarbind_with_predicted %>%
+               filter(instrument != "Orbitrap"),
+             mapping =aes(logIE, logIE_pred),
+             color = "light grey",
              alpha = 0.5,
              size = 3) +
-  scale_color_manual(breaks = c("Orbitrap","Agilent XCT","Agilent 6495", "Thermo LTQ"),
-  values = c("blue", "light grey", "light grey","light grey"))+
-  
+  geom_point(data = datarbind_with_predicted %>%
+               filter(instrument == "Orbitrap"),
+             mapping =aes(logIE, logIE_pred),
+             color = "blue",
+             alpha = 0.5,
+             size = 3) +
   #scale_y_log10() +
   theme(legend.position="none")+
   theme_classic()+
@@ -285,20 +294,20 @@ IE_slope_cor_Thomas = ggplot(data = datarbind_with_predicted %>%
 
 IE_slope_cor_Thomas
 
-rmse((datarbind_with_predicted %>% filter(split_first == TRUE))$logIE,
-     (datarbind_with_predicted %>% filter(split_first == TRUE))$logIE_pred)
-#0.22
-rmse((datarbind_with_predicted %>% filter(split_first == FALSE))$logIE,
-     (datarbind_with_predicted %>% filter(split_first == FALSE))$logIE_pred)
-#0.60
+rmse((datarbind_with_predicted %>% filter(split_first == "Training set"))$logIE,
+     (datarbind_with_predicted %>% filter(split_first == "Training set"))$logIE_pred)
+#0.46
+rmse((datarbind_with_predicted %>% filter(split_first == "Test set"))$logIE,
+     (datarbind_with_predicted %>% filter(split_first == "Test set"))$logIE_pred)
+#0.74
 
 
-rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == TRUE))$logIE,
-     (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == TRUE))$logIE_pred)
-#0.04
-rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == FALSE))$logIE,
-     (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == FALSE))$logIE_pred)
-#0.48
+rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == "Training set"))$logIE,
+     (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == "Training set"))$logIE_pred)
+#0.69
+rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == "Test set"))$logIE,
+     (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == "Test set"))$logIE_pred)
+#0.50
 
 graph_retrainPFAS=ggplotly(IE_slope_cor_Thomas)
 graph_retrainPFAS
