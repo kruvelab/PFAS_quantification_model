@@ -281,18 +281,19 @@ IE_slope_cor = ggplot() +
 
 IE_slope_cor
 
-IE_slope_cor_Thomas = ggplot(data = datarbind_with_predicted %>%
+
+IE_slope_cor_PFAS = ggplot(data = datarbind_with_predicted %>%
                         filter(instrument == "Orbitrap")) +
-  geom_point(mapping = aes(x = logIE,#see if pred and actual are correlated
-                           y = logIE_pred, 
-                           #text = name)) + 
-                           color = name)) +
+  geom_point(mapping = aes(x = logIE,y = logIE_pred,
+                           color = name,
+                           size = 1)) +
+
   #scale_y_log10() +
-  theme(legend.position="none")+
+  theme(legend.position="right")+
   geom_abline(slope = 1, intercept = 0)+
   facet_wrap(~split_first)
 
-IE_slope_cor_Thomas
+IE_slope_cor_PFAS
 
 rmse((datarbind_with_predicted %>% filter(split_first == "Training set"))$logIE,
      (datarbind_with_predicted %>% filter(split_first == "Training set"))$logIE_pred)
@@ -309,7 +310,7 @@ rmse((datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first
      (datarbind_with_predicted %>% filter(instrument == "Orbitrap" & split_first == "Test set"))$logIE_pred)
 #0.50
 
-graph_retrainPFAS=ggplotly(IE_slope_cor_Thomas)
+graph_retrainPFAS=ggplotly(IE_slope_cor_PFAS)
 graph_retrainPFAS
 
 htmlwidgets::saveWidget(plotly::as_widget(graph_retrainPFAS), "1stryPFAScal.html")
