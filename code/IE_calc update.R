@@ -156,10 +156,14 @@ Conc._error_boxplots +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90))
 
+IE_pred = IE_pred %>%
+  rename("Theoretical_pg/uL" = "Theoretical Amt",
+         "pred_pg/uL" = pred_conc.)
+
 concentration_cor_Thomas = ggplot(data = IE_pred %>%
                                filter(instrument == "Orbitrap")) +
-  geom_point(mapping = aes(x = `Theoretical Amt`,#see if pred and actual are correlated
-                           y = pred_conc., 
+  geom_point(mapping = aes(x = "Theoretical_pg/uL",
+                           y = "pred_pg/uL", 
                            #text = name)) + 
                            color = name)) +
   scale_y_log10() +
@@ -175,6 +179,8 @@ concentration_cor_Thomas
 Spiked_samples = Spiked_samples %>%
   rename("Sample ID" = Filename,
          name = Compound)
+
+Spiked_samples = Spiked_samples[-c(1:3,7:12,17:25,29:42,46:52,59:73,127:138,112:114,119:122),]
 
 IE_prededit <- IE_pred %>%
   select(name, SMILES, logIE_pred,IC,MW)
@@ -207,17 +213,17 @@ Spiked_samples = Spiked_samples %>%
 Spiked_samples = Spiked_samples %>%
   mutate(pred_conc_pg_uL = pred_conc.*MW)%>%
   select(pred_conc_pg_uL, everything())%>%  
-  mutate(pred_conc_ng = case_when(
+  mutate(pred_ng = case_when(
     `Sample ID` == "QCN-AL" ~ (pred_conc_pg_uL*1097.2010178117)/1000,
     `Sample ID` == "QCN-BL" ~ (pred_conc_pg_uL*961.704834605598)/1000,
     `Sample ID` == "QCN-CL" ~ (pred_conc_pg_uL*952.162849872773)/1000,
     TRUE ~ (pred_conc_pg_uL*1000)/1000))%>%
-  select(pred_conc_ng, , everything())
+  select(pred_ng, everything())
 
 ggplot(data = Spiked_samples %>%
          filter(`Sample ID` != "PL-4"), 
        mapping = aes(x = name,
-                     y = pred_conc_ng,
+                     y = pred_ng,
                      fill = `Sample ID`)) +
   geom_bar(position = "dodge", stat = "identity") +
   geom_abline(slope = 0, intercept = 5) +

@@ -281,12 +281,23 @@ IE_slope_cor = ggplot() +
 
 IE_slope_cor
 
+data_for_split = datarbind_with_predicted %>%
+  select(name, split_first, instrument, logIE, logIE_pred)%>%
+  rename(Compound =name)
 
-IE_slope_cor_PFAS = ggplot(data = datarbind_with_predicted %>%
+data43254 = data_for_split %>% filter(instrument == "Orbitrap")
+
+data43254 = data43254%>%
+  left_join(SMILES_data)
+
+write.xlsx(data43254,"data/test_train_split.xlsx")
+
+IE_slope_cor_PFAS = ggplot(data = data43254 %>%
                         filter(instrument == "Orbitrap")) +
   geom_point(mapping = aes(x = logIE,y = logIE_pred,
-                           color = name,
-                           size = 1)) +
+                           color = Compound,
+                           size = 0.25,
+                           shape = Class)) +
 
   #scale_y_log10() +
   theme(legend.position="right")+
@@ -314,4 +325,5 @@ graph_retrainPFAS=ggplotly(IE_slope_cor_PFAS)
 graph_retrainPFAS
 
 htmlwidgets::saveWidget(plotly::as_widget(graph_retrainPFAS), "1stryPFAScal.html")
+
 
