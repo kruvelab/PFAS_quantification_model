@@ -237,11 +237,11 @@ suspSMILES_data = read_delim("data/sus data.csv",
                          delim = ",",
                          col_names = TRUE,)
 
-#descs_PFAS_suspects = PaDEL_original(suspSMILES_data %>% select(SMILES) %>% unique())
+descs_PFAS_suspects = PaDEL_original(suspSMILES_data %>% select(SMILES) %>% unique())
 
-# write_delim(descs_PFAS_suspects,
-#             "data/descs_PFAS_suspects.csv",
-#             delim = ",")
+write_delim(descs_PFAS_suspects,
+            "data/descs_PFAS_suspects.csv",
+            delim = ",")
 
 suspSMILES_data = suspSMILES_data %>%
   group_by(SMILES) %>%
@@ -285,6 +285,12 @@ suspSMILES_data =  suspSMILES_data %>%
 suspSMILES_data =  suspSMILES_data %>%
   mutate(pred_conc_pg_uL = pred_conc.*MW.x)%>%
   select(pred_conc_pg_uL, everything())
+
+predicted_conc.= suspSMILES_data %>%
+  select(pred_conc_pg_uL, name, `Sample ID`)
+
+write.xlsx(predicted_conc.,"data/pred_conc_sus.xlsx")
+
 
 #convert to F equivalent (in excel)
 
