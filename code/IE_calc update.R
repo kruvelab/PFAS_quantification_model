@@ -180,7 +180,9 @@ Spiked_samples = Spiked_samples %>%
   rename("Sample ID" = Filename,
          name = Compound)
 
-Spiked_samples = Spiked_samples[-c(1:3,7:12,17:25,29:42,46:52,59:73,127:138,112:114,119:122),]
+#Spiked_samples = Spiked_samples[-c(1:3,7:12,17:25,29:42,46:52,59:73,127:138,112:114,119:122),] #structurally relevant
+Spiked_samples = Spiked_samples[-c(36:38,42,68:70,112:114,119:122),] #all spiked PFAS
+#Spiked_samples = Spiked_samples[-c(1:3,7:12,17:25,29:42,46:52,59:73,74:138),] #only fluorotelomers
 
 IE_prededit <- IE_pred %>%
   select(name, SMILES, logIE_pred,IC,MW)
@@ -213,24 +215,48 @@ Spiked_samples = Spiked_samples %>%
 Spiked_samples = Spiked_samples %>%
   mutate(pred_conc_pg_uL = pred_conc.*MW)%>%
   select(pred_conc_pg_uL, everything())%>%  
-  mutate(pred_ng = case_when(
+  mutate(predicted_mass_ng = case_when(
     `Sample ID` == "QCN-AL" ~ (pred_conc_pg_uL*1097.2010178117)/1000,
     `Sample ID` == "QCN-BL" ~ (pred_conc_pg_uL*961.704834605598)/1000,
     `Sample ID` == "QCN-CL" ~ (pred_conc_pg_uL*952.162849872773)/1000,
     TRUE ~ (pred_conc_pg_uL*1000)/1000))%>%
-  select(pred_ng, everything())
+  select(predicted_mass_ng, everything())
 
 ggplot(data = Spiked_samples %>%
          filter(`Sample ID` != "PL-4"), 
        mapping = aes(x = name,
-                     y = pred_ng,
+                     y = predicted_mass_ng,
                      fill = `Sample ID`)) +
   geom_bar(position = "dodge", stat = "identity") +
   geom_abline(slope = 0, intercept = 5) +
   labs(x = "") +
-  theme(axis.text.x = element_text(angle = 90, 
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle = 90, 
                                    vjust = 0.5,
                                    hjust = 1))
+
+
+
+Spiked_samples = Spiked_samples %>%
+  filter(Area != 0)%>%
+  mutate(error_factor = case_when(predicted_mass_ng < 5 ~ 5/predicted_mass_ng,
+                                  predicted_mass_ng >5 ~ predicted_mass_ng/5))%>%
+  mutate(less_than_ten = case_when(error_factor < 10 ~ TRUE,
+                                   error_factor > 10 ~ FALSE))
+
+
+mean(Spiked_samples$error_factor, na.rm = TRUE)
+
+
+QCN_error_boxplots = ggplot(data = IE_pred) +
+  geom_boxplot(mapping = aes(x = Class,
+                             y = error_factor))
+
+QCN_error_boxplots +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90))
+
+
 
 #predicting concentrations for detected suspects
 suspSMILES_data = read_delim("data/sus data.csv",

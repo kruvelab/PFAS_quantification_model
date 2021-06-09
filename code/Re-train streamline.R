@@ -250,7 +250,7 @@ saveRDS(RFR,
         "regressors/PFAS_FOREST.rds")
 
 datarbind_with_predicted <- datarbindeditclean %>%
-  mutate( logIE_pred = predict(RFR, newdata = datarbindeditclean))
+  mutate( logIE_predicted = predict(RFR, newdata = datarbindeditclean))
 
 datarbind_with_predicted <- datarbind_with_predicted %>%
   arrange(instrument)
@@ -263,19 +263,19 @@ datarbind_with_predicted$split_first = factor(datarbind_with_predicted$split_fir
 IE_slope_cor = ggplot() +
   geom_point(data = datarbind_with_predicted %>%
                filter(instrument != "Orbitrap"),
-             mapping =aes(logIE, logIE_pred),
+             mapping =aes(logIE, logIE_predicted),
              color = "light grey",
              alpha = 0.5,
              size = 3) +
   geom_point(data = datarbind_with_predicted %>%
                filter(instrument == "Orbitrap"),
-             mapping =aes(logIE, logIE_pred),
+             mapping =aes(logIE, logIE_predicted),
              color = "blue",
              alpha = 0.5,
              size = 3) +
   #scale_y_log10() +
   theme(legend.position="none")+
-  theme_classic()+
+  theme_classic(base_size = 20)+
   geom_abline(slope = 1, intercept = 0)+
   facet_wrap(~split_first)
 
