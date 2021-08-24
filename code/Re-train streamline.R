@@ -41,8 +41,8 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
          MW = molecularmass(SMILES)) %>%
   ungroup()
  
- #removing adducts from dataset
- SMILES_data = SMILES_data[-c(17,26),]
+ #removing adducts and HFPO-DA from dataset
+ SMILES_data = SMILES_data[-c(17,23,26),]
 
 #eluent---
 eluent = read_delim("data/eluent.csv",
@@ -91,7 +91,7 @@ training = training %>%
 
 #####converting slopes to logIE########
 
-#importing previous trainng set
+#importing previous training set
 filename = "data/IE_training_data/190714_negative_model_logIE_data.csv"
 old_training_data = read_delim(filename,
                                delim = ";",
@@ -215,9 +215,11 @@ highlyCorrelated <- findCorrelation(correlationMatrix, cutoff=0.75)
 datarbindeditclean <- datarbindeditAAA %>%
   dplyr::select(-highlyCorrelated)%>%
   bind_cols(datarbindedit %>%
-              select(SMILES, name, organic_modifier,additive, instrument, source, solvent))%>%
-  select(name,SMILES,organic_modifier,organic_modifier_percentage,
-         additive, additive_concentration_mM, instrument,source,solvent, everything())
+              select(SMILES, name, organic_modifier,additive, instrument, source, solvent))
+
+datarbindeditclean <- datarbindeditclean %>%
+select(name,SMILES,organic_modifier,organic_modifier_percentage,
+  additive, additive_concentration_mM, instrument,source,solvent, everything())
 
 #splitting test and training set
 
@@ -294,7 +296,7 @@ data43254 = data_for_split %>% filter(instrument == "Orbitrap")
 data43254 = data43254%>%
   left_join(SMILES_data)
 
-write.xlsx(data43254,"data/test_train_split.xlsx")
+#write.xlsx(data43254,"data/test_train_split.xlsx")
 
 IE_slope_cor_PFAS = ggplot(data = data43254 %>%
                         filter(instrument == "Orbitrap")) +
