@@ -19,35 +19,7 @@ Spiked_samples = Orbitrap_dataset_raw %>%
   select(-`Theoretical Amt`) %>%
   na.omit()
 
-Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
-  na.omit(Area) %>%
-  filter(Area != "N/F") %>%
-  mutate(Area = as.numeric(Area))
-
-Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
-  group_by(Compound) %>%
-  mutate(`Theoretical Amt`=case_when(
-    Filename=="2020071205-cal21"~mean(`Theoretical Amt`[Filename=="2020071205-cal22"]),
-    TRUE~`Theoretical Amt`
-  ))%>%ungroup()
-
-#smiles----
-
-SMILES_data = read_delim("data/Smiles_for_Target_PFAS_semicolon.csv",
-                         delim = ";",
-                         col_names = TRUE)
-
-SMILES_data = SMILES_data %>%
-  rename(Compound = ID) %>%
-  select(Compound, SMILES, Class) %>%
-  na.omit()
-
-#remove adducts
-SMILES_data = SMILES_data[-c(17,26),]
-
-descs_calc_PFAS = PaDEL_original(SMILES_data)
-
-descs_calc_PFAS = read_delim("data/descs_calc.csv",
+descs_calc_PFAS = read_delim("data/descs_recalc.csv",
                              delim = ",",
                              col_names = TRUE)
 
@@ -62,52 +34,12 @@ descs_calc_PFAS = descs_calc_PFAS %>%
          MW = molecularmass(SMILES)) %>%
   ungroup()
 
-#eluent---
-eluent = read_delim("data/eluent.csv",
-                    delim = ",",
-                    col_names = TRUE)
-
-organic_modifier = "MeCN"
-pH.aq. = 7.0
-
-data = Orbitrap_dataset_raw %>%
-  left_join(descs_calc_PFAS)
-
-data = data %>%
-  group_by(Compound) %>%
-  mutate(RT = mean(RT)) %>%
-  ungroup()
-
-data = data %>%
-  mutate(
-    RT = as.numeric(RT),
-    area_IC = Area*IC,
-    organic_modifier = organic_modifier,
-    pH.aq. = pH.aq.,
-    NH4 = 1, #1 if the buffer contains NH¤ ions , 0 if not. 
-    organic = organicpercentage(eluent,RT),
-    viscosity = viscosity(organic,organic_modifier),
-    surface_tension = surfacetension(organic,organic_modifier),
-    polarity_index = polarityindex(organic,organic_modifier)) 
-
-training = data %>%
-  filter(!is.na(SMILES)) %>%
-  filter(`Theoretical Amt` != "N/F") %>%
-  filter(`Theoretical Amt` != "N/A") %>%
-  mutate(`Theoretical Amt` = as.numeric(`Theoretical Amt`)) %>%
-  mutate(`Theoretical Amt` = `Theoretical Amt`/MW) #correct with MW
-
-ggplot(data = training) +
-  geom_point(mapping = aes(x = `Theoretical Amt`,
-                           y = area_IC)) +
-  facet_wrap(~Compound, scales = "free") +
-  scale_x_log10() +
-  scale_y_log10()
+training = read_delim("data/cal_exp_data.csv",
+           delim = ",",
+           col_names = TRUE)
 
 training = training %>%
-  group_by(SMILES) %>%
-  mutate(slope = linear_regression(area_IC, `Theoretical Amt`)$slope) %>%
-  ungroup()
+  left_join(descs_calc_PFAS)
 
 IE_pred = training %>% 
   mutate(logIE_pred = 0) %>%
@@ -116,12 +48,9 @@ IE_pred = training %>%
   mutate(additive = "ammoniumacetate",
        additive_concentration_mM = 2,
        instrument = "Orbitrap",
-       source = "ESI",
-       solvent = "MeCN",#placeholder
-       SPLIT = "TRUE")%>%#placeholder
-  select(name,SMILES, 1452:1468,everything(),
-         -Filename,-RT,-Class,-`Theoretical Amt`,-SPLIT)%>%
-  na.omit()
+       solvent = "MeCN")%>%
+  select(name,SMILES, 1451:1460,everything())%>%
+  select(-Filename,-RT,-`Theoretical Amt`)
 
 IE_pred = IE_pred%>%
 unique()

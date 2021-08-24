@@ -41,7 +41,7 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
          MW = molecularmass(SMILES)) %>%
   ungroup()
  
- #removing adducts and HFPO-DA from dataset
+ #removing adducts and HFPO-DA from trainingset
  SMILES_data = SMILES_data[-c(17,23,26),]
 
 #eluent---
@@ -88,6 +88,10 @@ training = training %>%
   group_by(SMILES) %>%
   mutate(slope = linear_regression(area_IC, `Theoretical Amt`)$slope) %>%
   ungroup()
+
+write_delim(training,
+             "data/cal_exp_data.csv",
+            delim = ",")
 
 #####converting slopes to logIE########
 
