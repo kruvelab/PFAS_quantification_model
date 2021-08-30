@@ -9,7 +9,7 @@ source("code/compound_eluent.R")
 
 regressor = readRDS("regressors/PFAS_FOREST.rds")
 
-#lcms data ----
+#importing lcms data with background signal----
 
 filename = "data/Batch 1 Semi Quant w frag PL4 rep.xlsx"
 Orbitrap_dataset_raw = read_excel_allsheets(filename)
@@ -19,27 +19,103 @@ Spiked_samples = Orbitrap_dataset_raw %>%
   select(-`Theoretical Amt`) %>%
   na.omit()
 
-descs_calc_PFAS = read_delim("data/descs_recalc.csv",
-                             delim = ",",
-                             col_names = TRUE)
+Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
+  na.omit(Area) %>%
+  filter(Area != "N/F") %>%
+  mutate(Area = as.numeric(Area))
 
-descs_calc_PFAS = descs_calc_PFAS %>%
-  select(Compound, SMILES, 
-         #all_of(descs_names),
-         everything())
+Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
+  group_by(Compound) %>%
+  mutate(`Theoretical Amt`=case_when(
+    Filename=="2020071205-cal21"~mean(`Theoretical Amt`[Filename=="2020071205-cal22"]),
+    TRUE~`Theoretical Amt`
+  ))%>%ungroup()
 
-descs_calc_PFAS = descs_calc_PFAS %>%
-  group_by(SMILES) %>%
-  mutate(IC = isotopedistribution(SMILES),
-         MW = molecularmass(SMILES)) %>%
+#smiles----
+
+SMILES_data = read_delim("data/Smiles_for_Target_PFAS_semicolon.csv",
+                         delim = ";",
+                         col_names = TRUE)
+
+SMILES_data = SMILES_data %>%
+  rename(Compound = ID) %>%
+  select(Compound, SMILES, Class) %>%
+  na.omit()
+
+#remove adducts + HPFODA
+SMILES_data = SMILES_data[-c(17,23,26),]
+
+# descs_calc_PFAS = PaDEL_original(SMILES_data)
+# 
+# descs_calc_PFAS = read_delim("data/descs_calc.csv",
+#                              delim = ",",
+#                              col_names = TRUE)
+# 
+# descs_calc_PFAS = descs_calc_PFAS %>%
+#   select(Compound, SMILES, 
+#          #all_of(descs_names),
+#          everything())
+# 
+# descs_calc_PFAS = descs_calc_PFAS %>%
+#   group_by(SMILES) %>%
+#   mutate(IC = isotopedistribution(SMILES),
+#          MW = molecularmass(SMILES)) %>%
+#   ungroup()
+
+#eluent---
+eluent = read_delim("data/eluent.csv",
+                    delim = ",",
+                    col_names = TRUE)
+
+organic_modifier = "MeCN"
+pH.aq. = 7.0
+
+descs <- read_delim("data/descs_recalc.csv")
+
+descs = descs %>%
+group_by(SMILES) %>%
+mutate(IC = isotopedistribution(SMILES),
+MW = molecularmass(SMILES)) %>%
+ungroup()
+
+data = Orbitrap_dataset_raw %>%
+  left_join(descs)
+
+data = data %>%
+  group_by(Compound) %>%
+  mutate(RT = mean(RT)) %>%
   ungroup()
 
-training = read_delim("data/cal_exp_data.csv",
-           delim = ",",
-           col_names = TRUE)
+data = data %>%
+  mutate(
+    RT = as.numeric(RT),
+    area_IC = Area*IC,
+    organic_modifier = organic_modifier,
+    pH.aq. = pH.aq.,
+    NH4 = 1, #1 if the buffer contains NH¤ ions , 0 if not. 
+    organic = organicpercentage(eluent,RT),
+    viscosity = viscosity(organic,organic_modifier),
+    surface_tension = surfacetension(organic,organic_modifier),
+    polarity_index = polarityindex(organic,organic_modifier)) 
+
+training = data %>%
+  filter(!is.na(SMILES)) %>%
+  filter(`Theoretical Amt` != "N/F") %>%
+  filter(`Theoretical Amt` != "N/A") %>%
+  mutate(`Theoretical Amt` = as.numeric(`Theoretical Amt`)) %>%
+  mutate(`Theoretical Amt` = `Theoretical Amt`/MW) #correct with MW
+
+ggplot(data = training) +
+  geom_point(mapping = aes(x = `Theoretical Amt`,
+                           y = area_IC)) +
+  facet_wrap(~Compound, scales = "free") +
+  scale_x_log10() +
+  scale_y_log10()
 
 training = training %>%
-  left_join(descs_calc_PFAS)
+  group_by(SMILES) %>%
+  mutate(slope = linear_regression(area_IC, `Theoretical Amt`)$slope) %>%
+  ungroup()
 
 IE_pred = training %>% 
   mutate(logIE_pred = 0) %>%
@@ -48,15 +124,16 @@ IE_pred = training %>%
   mutate(additive = "ammoniumacetate",
        additive_concentration_mM = 2,
        instrument = "Orbitrap",
-       solvent = "MeCN")%>%
-  select(name,SMILES, 1451:1460,everything())%>%
-  select(-Filename,-RT,-`Theoretical Amt`)
+       source = "ESI",
+       solvent = "MeCN",#placeholder
+       SPLIT = "TRUE")%>%#placeholder
+  select(name,SMILES, 1451:1460,everything(),
+         -Filename,-RT,)%>%#-`Theoretical Amt`)%>%
+  na.omit()
 
 IE_pred = IE_pred%>%
 unique()
 
-# prediction =  predict(regressor, newdata = IE_pred, predict.all = TRUE)
-# prediction = prediction$aggregate
 IE_pred <- IE_pred %>%
   mutate(logIE_pred = predict(regressor, newdata = IE_pred, predict.all = TRUE)) %>%
   select(SMILES,logIE_pred, everything())
@@ -109,9 +186,9 @@ Spiked_samples = Spiked_samples %>%
   rename("Sample ID" = Filename,
          name = Compound)
 
-#Spiked_samples = Spiked_samples[-c(1:3,7:12,17:25,29:42,46:52,59:73,127:138,112:114,119:122),] #structurally relevant
-Spiked_samples = Spiked_samples[-c(36:38,42,68:70,112:114,119:122),] #all spiked PFAS
-#Spiked_samples = Spiked_samples[-c(1:3,7:12,17:25,29:42,46:52,59:73,74:138),] #only fluorotelomers
+
+Spiked_samples = Spiked_samples[-c(36:38,42,68:70,112:114,119:122,59:61),] #all spiked PFAS
+#Spiked_samples = Spiked_samples[-c(1:3,7:12,17:25,29:42,46:52,59:73,74:138,59:61),] #only fluorotelomers
 
 IE_prededit <- IE_pred %>%
   select(name, SMILES, logIE_pred,IC,MW)
@@ -188,7 +265,7 @@ QCN_error_boxplots +
 
 
 #predicting concentrations for detected suspects
-suspSMILES_data = read_delim("data/sus data.csv",
+suspSMILES_data = read_delim("data/sus_data.csv",
                          delim = ",",
                          col_names = TRUE,)
 
@@ -242,15 +319,22 @@ suspSMILES_data =  suspSMILES_data %>%
   select(pred_conc_pg_uL, everything())
 
 predicted_conc.= suspSMILES_data %>%
-  select(pred_conc_pg_uL, name, `Sample ID`)
+  select(pred_conc_pg_uL, name, `Sample ID`,SMILES,MW.x,`Ex vol.`, `sample weight`)
 
-write.xlsx(predicted_conc.,"data/pred_conc_sus.xlsx")
+#convert to F equivalent
 
+#count number of F atoms
+x <- suspSMILES_data$SMILES
+f.atoms <- lengths(regmatches(x, gregexpr("F",x)))
 
-#convert to F equivalent (in excel)
+fatoms. <- data.frame(f.atoms)
 
-#dataset[Filename == "Spiked sample"]$Area - dataset[Filename == "Blank"]$Area 
+blended <- cbind(fatoms., predicted_conc.)
 
-
-
+#convert to predicted ng F/g
+blended <- blended %>%
+  mutate(mass_F = f.atoms*19,
+         percent.F=mass_F/MW.x,
+         "Predicted ng_F/uL"= (percent.F*pred_conc_pg_uL)/1000,
+         pred_ng_g = (`Predicted ng_F/uL`*`Ex vol.`)/`sample weight`)
 
