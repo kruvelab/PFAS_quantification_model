@@ -120,13 +120,13 @@ read_excel_allsheets <- function(filename) {
       mutate(across(everything(), as.character))
     #print(data_this_sheet)
     #suppressMessages(
-      data_this_sheet = data_this_sheet %>%
-        group_by(Compound, Filename) %>%
-        dplyr::summarise(Area = max(as.double(Area) %>% na.omit()),
-                         RT = mean(as.double(`Actual RT`) %>% na.omit()),
-                         `Theoretical Amt` = mean(as.double(str_replace(`Theoretical Amt`, pattern = ",", replacement = ".")) %>% na.omit())) %>%
-        ungroup()
-     # )
+    data_this_sheet = data_this_sheet %>%
+      group_by(Compound, Filename) %>%
+      dplyr::summarise(Area = max(as.double(Area) %>% na.omit()),
+                       RT = mean(as.double(`Actual RT`) %>% na.omit()),
+                       `Theoretical Amt` = mean(as.double(str_replace(`Theoretical Amt`, pattern = ",", replacement = ".")) %>% na.omit())) %>%
+      ungroup()
+    # )
     data = data %>%
       bind_rows(data_this_sheet)
   }
@@ -140,7 +140,7 @@ read_excel_allsheets <- function(filename) {
 
 read_SMILES <- function(filename, 
                         compounds_to_be_removed_as_list = c()
-                        ) {
+) {
   
   SMILES_data = read.csv(filename, sep=";")
   
@@ -160,14 +160,14 @@ read_SMILES <- function(filename,
 }
 
 add_mobile_phase_composition = function(data,
-                                    eluent_file_name,
-                                    organic_modifier = "MeCN",
-                                    pH.aq. = 7.0,
-                                    NH4 = 1,
-                                    additive = "ammoniumacetate",
-                                    additive_concentration_mM = 2,
-                                    instrument = "Orbitrap",
-                                    source = "ESI") {
+                                        eluent_file_name,
+                                        organic_modifier = "MeCN",
+                                        pH.aq. = 7.0,
+                                        NH4 = 1,
+                                        additive = "ammoniumacetate",
+                                        additive_concentration_mM = 2,
+                                        instrument = "Orbitrap",
+                                        source = "ESI") {
   eluent = read_delim(eluent_file_name,
                       delim = ",",
                       col_names = TRUE)
@@ -256,8 +256,8 @@ anchoring = function(data_to_be_anchored,
   
   data_to_be_anchored = data_to_be_anchored %>%
     mutate(#logRIE = log(slope/Anchor_slope$slope),
-           logIE  = log(slope/Anchor_slope$slope) #logRIE 
-                    + old_training_data_IEPFOSvalue$logIE) %>% 
+      logIE  = log(slope/Anchor_slope$slope) #logRIE 
+      + old_training_data_IEPFOSvalue$logIE) %>% 
     select(Compound, SMILES, logIE, pH.aq., polarity_index, viscosity, surface_tension, NH4)
   
   ## Prepping + joining old dataset to new ----
@@ -288,7 +288,7 @@ cleaning_data = function(data,
   data = data %>%
     dplyr::select(-c(SMILES, name, data_type)) %>%
     select_if(~ sum(is.na(.))< 10,) 
-
+  
   
   # Checking that any of the categorical values would not have more than 80% of existing/non-existing values
   data = data %>%  
@@ -346,9 +346,9 @@ training_logIE_pred_model = function(data,
   fitControl <- trainControl(method = fitControlMethod, index = folds)
   
   model <- train(logIE ~ ., 
-               data = training_set %>% select(-name, -data_type, -SMILES),
-               method = method,
-               trControl = fitControl)
+                 data = training_set %>% select(-name, -data_type, -SMILES),
+                 method = method,
+                 trControl = fitControl)
   
   
   
@@ -474,11 +474,11 @@ is_homologue = function(analyte_SMILES,
               by = c("isoto" = "isoto")) %>%
     mutate_all(~replace(., is.na(.), 0))
   if(all(comparison$smaller == comparison$number)) {
-      return("smaller")
+    return("smaller")
   } else if  (all(comparison$bigger == comparison$number)) {
-      return("bigger")
+    return("bigger")
   } else {
-      return(NA)
+    return(NA)
   }
 }
 
@@ -531,8 +531,8 @@ concentration_forAnalytes_model <- function(filename_data,
   
   # lm function to find RF of suspect compound
   linMod <- lm(log10(slope) ~ logIE_predicted, data = analysis_data_descr %>%
-                                                            drop_na(slope) %>%             # need some linearity check here?!
-                                                            filter(Compound != "PFHpS-br"))     
+                 drop_na(slope) %>%             # need some linearity check here?!
+                 filter(Compound != "PFHpS-br"))     
   
   
   # Plot measured vs predicted
@@ -556,7 +556,7 @@ concentration_forAnalytes_model <- function(filename_data,
   
   plot_predicted_theoretical_conc <- ggplot() +
     geom_point(data = analytes_concentrations %>%
-                  drop_na(Theoretical_conc_uM) 
+                 drop_na(Theoretical_conc_uM) 
                #   group_by(Compound, Theoretical_conc_uM) %>%
                #   mutate(conc_pred = mean(conc_pred)) %>%
                #   ungroup()
