@@ -1,5 +1,4 @@
 
-#setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFAS_semi_quant_HS")
 setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant_HS")
 #setwd("/GitHub/PFAS_semi_quant_HS")
 source("code/functions.R")
@@ -89,7 +88,9 @@ IE_slope_cor
 logIE_pred_model = training_logIE_pred_model(data = data_clean)
 
 
+logIE_pred_model$metrics
 
+#saveRDS(logIE_pred_model, file="model_PFAS_logIE.RData")
 
 
 

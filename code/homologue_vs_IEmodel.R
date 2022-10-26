@@ -1,5 +1,5 @@
 
-
+# First need to run PFAS IE model train_HS
 
 #-----------------------------------------------------------
 # Homologous series vs ML model predictions - concentrations
@@ -93,6 +93,11 @@ data_homolog_conc_CF2CF2 <- concentration_forAnalytes_homolog(filename_data = "d
                                                               findHomolog_onlyForAnalytes = FALSE) 
 
 
+data_homolog_conc_CF2CF2_intercept <- concentration_forAnalytes_homolog_withIntercept(filename_data = "data/Batch 1 Semi Quant w frag.xlsx",
+                                                                                   filename_smiles = "data/Smiles_for_Target_PFAS_semicolon.csv",
+                                                                                   homolog_pattern_SMILES = "F[C+](F)[C+](F)F",
+                                                                                   findHomolog_onlyForAnalytes = FALSE) 
+
 
 
 
@@ -131,12 +136,11 @@ for (i in 1:length(SMILES_list_homolog_CF2$SMILES.x)) {
 # for CF2CF2 compounds
 SMILES_list_homolog_CF2CF2 <- homologs_CF2CF2 %>%
   select(Compound, SMILES.x) %>%
-  filter(!Compound %in% c("PFTriDA", "PFNA")) %>%
   unique()
 
 predicted_concentrations_CF2CF2 <- tibble()
 
-for (i in 4:length(SMILES_list_homolog_CF2CF2$SMILES.x)) {
+for (i in 19:length(SMILES_list_homolog_CF2CF2$SMILES.x)) {
   data_forTraining <- data_clean %>%
     filter(!grepl(SMILES_list_homolog_CF2CF2[i,2], SMILES, fixed = TRUE))
   
@@ -214,13 +218,25 @@ summary_table_CF2CF2  <- data_real_conc %>%
                      Compound_homolog = Compound.x,
                      SMILES_homolog = SMILES.x,
                      slope_homolog = slope,
-                     conc_homolog = conc))
+                     conc_homolog = conc)) %>%
+  left_join(data_homolog_conc_CF2CF2_intercept %>%
+              rename(Compound = Compound.y,
+                     SMILES = SMILES.y,
+                     Compound_homolog = Compound.x,
+                     SMILES_homolog = SMILES.x,
+                     slope_homolog = slope,
+                     conc_homolog_withIntercept = conc,
+                     intercept_homolog = intercept))
 
 
 summary_table_CF2CF2_filtered <- summary_table_CF2CF2 %>%
   filter(!is.na(Compound_homolog))
 
 write.csv2(summary_table_CF2CF2_filtered, "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/Topics_exp_codes/Lara_PFAS/Melanie/summary_table_CF2CF2_filtered.csv")
+
+summary_table_CF2CF2 <- read.csv2("C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/Topics_exp_codes/Lara_PFAS/Melanie/summary_table_CF2CF2_filtered.csv")
+
+#summary_table_CF2_filtered <- summary_table_CF2CF2
 
 # plots
 
@@ -310,10 +326,6 @@ summary_table_CF2_filtered %>%
 
 
 
-
-
-
-
 #---------------------
 # Testing Lara's data
 #---------------------
@@ -326,11 +338,96 @@ lara_concentrations_pred <- concentration_forAnalytes_model(filename_data = "C:/
                                                             filename_smiles = "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/Topics_exp_codes/Lara_PFAS/Smiles_for_Target_PFAS_semicolon_lara.csv",
                                                             filename_eluent = "data/eluent.csv",
                                                             pred_model =  logIE_pred_model,
-                                                            compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP")) #by names, all of those exist in both Lara's and Thomas' data
+                                                            compounds_to_be_removed_as_list = c(
+                                                              "HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP")) #by names, all of those exist in both Lara's and Thomas' data
+
+setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant_HS")
+cal_filename_data <-  "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/Lara_PFAS/Target PFAS for semiquant_120722.xlsx"
+cal_filename_smiles <- "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/Lara_PFAS/Target_PFAS_Calibrants.csv"
+sus_filename_data <- "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/Lara_PFAS/20220208_Suspect_screening_TU pools.xlsx"
+sus_filename_smiles <- "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/Lara_PFAS/suspects_smiles_neutral.csv"
+logIE_pred_model <- readRDS("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant_HS/model_PFAS_logIE.Rdata")
+
+lara_concentrations_pred <- concentration_forAnalytes_model_cal_separateFile(cal_filename_data, 
+                                                                             cal_filename_smiles, 
+                                                                             sus_filename_data,
+                                                                             sus_filename_smiles,
+                                                                             filename_eluent = "data/eluent.csv",
+                                                                             pred_model =  logIE_pred_model,
+                                                                             compounds_to_be_removed_as_list = c("PFPeS", "PFHpS", "PFNS", "PFPeDA", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
+
+#data_ions <- lara_concentrations_pred$data
+#data_neutral <- lara_concentrations_pred$data
+#saveRDS(lara_concentrations_pred, file="C:/Users/karpa/OneDrive - Kruvelab/Helen_phd/projects_measurements/Lara_PFAS/lara_PFAS_data2.RData")
 
 lara_pred <- lara_concentrations_pred$data
 
+lara_pred <- lara_pred %>%
+  select(-c(IC, Molecular_weight, area_IC)) %>%
+  rename(Predicted_RF = slope_pred,
+         Predicted_conc_uM = conc_pred)
+#write_delim(lara_pred, "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/Lara_PFAS/Lara_pred_conc_neutralSuspectsSMILES.csv", delim = ",")
+
 ggplotly(lara_concentrations_pred$plot_predicted_theoretical_conc)
+ggplotly(lara_concentrations_pred$plot_predictedIE_slope)
+
+
+data_both <- data_neutral %>%
+  rename(conc_pred_neutral = conc_pred) %>%
+  #filter(Compound == "eecec PFSA n=8") %>% 
+  left_join(data_ions %>%
+              select(Compound, Filename, Area, RT, conc_pred) %>% 
+              rename(conc_pred_ion = conc_pred)) %>% 
+  mutate(conc_difference = abs(conc_pred_neutral-conc_pred_ion))
+  filter(conc_pred_neutral != conc_pred_ion)
+
+
+ggplot(data = data_both) +
+  geom_point(mapping = aes(x = log10(conc_pred_neutral), 
+                           y = log10(conc_pred_ion),
+                           color = Compound))+
+  xlim(c(-8, -4)) +
+  ylim(c(-8,-4)) +
+  geom_abline(intercept = 0, slope = 1) +
+  geom_abline(intercept = 1, slope = 1) +
+  geom_abline(intercept = -1, slope = 1) +
+  
+  my_theme
+
+
+
+
+# barplot of suspect concentrations?
+
+#bar plot
+data_short = lara_pred %>%
+  filter(Compound %in% c("d/C PFSA n=8", "eecec PFSA n=8", "ether PFSA n=4", "ether PFSA n=8", "H-PFDoDA", "H-PFDS", "NMe-FBSAA")) %>%
+  #filter(Compound %in% c("NMe-FBSAA")) %>% 
+  mutate(unique_compound = paste0(Compound, " (", SMILES, ")")) %>%
+  filter(grepl("Pool", Filename, fixed = TRUE))
+
+barplot <- ggplot(data = data_short, aes( x = factor( unique_compound ), y = ((Predicted_conc_uM)), fill = Compound ) ) +    # print bar chart
+  geom_bar( stat = 'identity', position = 'dodge') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  #scale_fill_manual(values=c("#959D95", "#515251", "#7CB368")) +
+  xlab("") +
+  ylab("Concentration (nM)")+
+  my_theme +
+  facet_wrap(~ Filename, ncol = 6)
+  #coord_flip()
+#scale_log_x
+
+#ggsave(barplot, filename = "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/Lara_PFAS/suspects_summary_byFilename.svg", width=40, height=80, units = "cm")
+
+
+
+
+
+
+
+
+
+
 
 
 

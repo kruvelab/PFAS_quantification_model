@@ -1,0 +1,34 @@
+Compound,split_first,instrument,logIE,logIE_predicted,SMILES,Class,IC,MW
+11Cl-PF3OUdS,Training set,Orbitrap,2.8679073701750113,2.774139881134033,O[S](=O)(=O)C(F)(F)C(F)(F)OC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)Cl,Chlorinated polyfluorinated ether sulfonates,155.79091314057297,632.599
+4:2 FTS,Training set,Orbitrap,0.7137737611275601,0.7229362726211548,O[S](=O)(=O)CCC(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer sulfonic acid,112.9497421784555,328.153
+6:2 diPAP,Training set,Orbitrap,1.1699668086622583,1.210612416267395,O[P](=O)(OCCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F)OCCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer phosphate ester,119.92905264569504,790.173
+8:2 diPAP,Training set,Orbitrap,0.9473265467458938,0.9007235765457153,O[P](=O)(OCCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F)OCCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer phosphate ester,125.25400131437574,990.203
+8:2 FTS,Training set,Orbitrap,0.8419228014998281,0.8999106884002686,O[S](=O)(=O)CCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer sulfonic acid,117.82053841787094,528.183
+EtFOSA,Training set,Orbitrap,2.496861511306493,2.2877275943756104,CCNS(=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoroalkane sulfonamides,117.86609116009312,527.198
+EtFOSAA,Training set,Orbitrap,1.1420400429017552,1.3524836301803589,CCN(CC(O)=O)[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoroalkane sulfonamidoacetic acids,121.14420784820827,585.234
+FOSA,Training set,Orbitrap,2.267194578935051,2.3101372718811035,N[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoroalkane sulfonamides,115.40729704468495,499.145
+FOSAA,Training set,Orbitrap,1.7773388753329566,1.6481515169143677,OC(=O)CN[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoroalkane sulfonamidoacetic acids,118.42946014673065,557.181
+5:3 FTA,Training set,Orbitrap,0.4091190062064092,0.21205605566501617,OC(=O)CCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer carboxylic acid,109.39112530089835,342.107
+3:3 FTA,Training set,Orbitrap,-1.7064993318023527,-1.6385390758514404,OC(=O)CCC(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer carboxylic acid,107.07590567029904,242.092
+MeFOSAA,Training set,Orbitrap,1.1133476233315704,1.2329009771347046,CN(CC(O)=O)S(=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoroalkane sulfonamidoacetic acids,119.67640420121006,571.207
+NaDONA,Training set,Orbitrap,2.1509493973763036,1.9826054573059082,OC(=O)C(F)(F)C(F)OC(F)(F)C(F)(F)C(F)(F)OC(F)(F)F,Perfluorinated ether carboxylic acids,108.79103547331111,378.069
+PFBS,Training set,Orbitrap,2.3242206302803217,2.1477389335632324,OS(=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro sulfonic acid,110.51434405874777,300.1
+PFDS,Training set,Orbitrap,2.736127714241249,2.639641284942627,O[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro sulfonic acid,117.82053841787094,600.145
+PFHpA,Training set,Orbitrap,0.6972737938243379,0.6672228574752808,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,108.22766648667358,364.061
+PFHxDA,Training set,Orbitrap,1.7142474779580006,1.704906940460205,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,119.11992373730446,814.128
+PFHxS,Training set,Orbitrap,2.4106004579179094,2.529479503631592,O[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro sulfonic acid,112.9497421784555,400.115
+PFNA,Training set,Orbitrap,1.2726850558215073,1.2720872163772583,FC(F)(C(F)(F)C(=O)O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,110.56628211297334,464.076
+PFOA,Training set,Orbitrap,0.9451930684785239,1.1553525924682617,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,109.39112530089835,414.068
+PFOS,Training set,Orbitrap,2.59,2.689730167388916,O[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro sulfonic acid,115.36174430246278,500.13
+PFPeA,Training set,Orbitrap,0.6965913520663605,0.689225435256958,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,105.93584285177471,264.046
+PFUnDA,Training set,Orbitrap,1.6153508157620735,1.657059907913208,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,112.95168973067399,564.091
+6:2 FTS,Test set,Orbitrap,0.7802549217382553,0.9239576458930969,O[S](=O)(=O)CCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer sulfonic acid,115.36174430246278,428.168
+6:2/8:2 diPAP,Test set,Orbitrap,1.0336813497096056,1.2920610904693604,O[P](=O)(OCCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F)OCCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer phosphate ester,122.59925548644893,890.188
+9Cl-PF3ONS,Test set,Orbitrap,2.6980434280230563,2.5518131256103516,O[S](=O)(=O)C(F)(F)C(F)(F)OC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)Cl,Chlorinated polyfluorinated ether sulfonates,152.54540876437423,532.584
+7:3 FTA,Test set,Orbitrap,0.9283090427113165,0.8819603323936462,OC(=O)CCC(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Fluorotelomer carboxylic acid,111.75313692289856,442.122
+MeFOSA,Test set,Orbitrap,2.662086588501961,1.2481820583343506,CN(CC(O)=O)[S](=O)(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoroalkane sulfonamides,119.67640420121006,571.207
+PFDA,Test set,Orbitrap,1.503174580394978,1.6868013143539429,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,111.75313692289856,514.083
+PFDoDA,Test set,Orbitrap,1.8086279976465844,1.67561674118042,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,114.16194053629964,614.098
+PFHxA,Test set,Orbitrap,0.20275855201052329,0.6442216038703918,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,107.07590567029904,314.053
+PFTeDA,Test set,Orbitrap,1.5824300866527932,1.6272798776626587,OC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,116.61753614110161,714.113
+PFTriDA,Test set,Orbitrap,1.6839998520834298,1.6845725774765015,FC(F)(C(F)(F)C(=O)O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F,Perfluoro carboxylic acid,115.38388933977551,664.106
