@@ -43,7 +43,7 @@ lara_concentrations_pred <- concentration_forAnalytes_model_cal_separateFile(cal
                                                                              sus_filename_smiles,
                                                                              filename_eluent = "data/eluent.csv",
                                                                              pred_model =  logIE_pred_model,
-                                                                             compounds_to_be_removed_as_list = c("PFPeS", "PFHpS", "PFNS", "PFPeDA", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
+                                                                             compounds_to_be_removed_as_list = c("PFHpS-br", "PFPeS", "PFHpS", "PFNS", "PFPeDA", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
 
 
 ####################################################
