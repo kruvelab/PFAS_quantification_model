@@ -143,7 +143,7 @@ read_SMILES <- function(filename,
                         compounds_to_be_removed_as_list = c()
                         ) {
   
-  SMILES_data = read.csv(filename, sep=",")
+  SMILES_data = read.csv(filename, sep=";")
   
   SMILES_data = SMILES_data %>%
     rename(Compound = ID) %>%
@@ -532,8 +532,7 @@ concentration_forAnalytes_model <- function(filename_data,
   
   # lm function to find RF of suspect compound
   linMod <- lm(log10(slope) ~ logIE_predicted, data = analysis_data_descr %>%
-                                                            drop_na(slope) %>%             # need some linearity check here?!
-                                                            filter(Compound != "PFHpS-br"))     # Take this out in final!!
+                                                            drop_na(slope))     # Take this out in final!!
   
   
   # Plot measured vs predicted
@@ -552,17 +551,18 @@ concentration_forAnalytes_model <- function(filename_data,
   analytes_concentrations <- analysis_data_descr %>%
     # filter(is.na(slope)) %>%
     mutate(slope_pred = 10^(summary(linMod)$coefficients[2]*logIE_predicted + summary(linMod)$coefficients[1])) %>%
-    mutate(conc_pred = area_IC/slope_pred) %>%
-    select(colnames(analysis_data), slope_pred, conc_pred)
+    mutate(conc_pred_uM = area_IC/slope_pred) %>%
+    mutate(conc_pred_pg_uL = conc_pred_uM*Molecular_weight) %>% 
+    select(colnames(analysis_data), slope_pred, conc_pred_uM, conc_pred_pg_uL)
   
   plot_predicted_theoretical_conc <- ggplot() +
     geom_point(data = analytes_concentrations %>%
                   drop_na(Theoretical_conc_uM) 
                #   group_by(Compound, Theoretical_conc_uM) %>%
-               #   mutate(conc_pred = mean(conc_pred)) %>%
+               #   mutate(conc_pred_uM = mean(conc_pred_uM)) %>%
                #   ungroup()
                ,
-               mapping = aes(Theoretical_conc_uM, conc_pred,
+               mapping = aes(Theoretical_conc_uM, conc_pred_uM,
                              color = Compound)) +
     geom_abline(slope = 1, intercept = 0) +
     scale_y_log10(limits = c(10^-5, 10^0)) +
@@ -762,11 +762,23 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
            area_IC = Area*IC,
            Theoretical_conc_uM = Theoretical_amt/Molecular_weight) 
   
-  analysis_data_descr <- analysis_data %>%    
-    group_by(SMILES, Compound) %>%
+  analysis_data_descr <- analysis_data %>% 
+    #filter(Compound == "11Cl-PF3OUdS") %>% 
+    group_by(Compound) %>%
     mutate(slope = linear_regression(area_IC, Theoretical_conc_uM)$slope,
+           intercept = linear_regression(area_IC, Theoretical_conc_uM)$intercept,
            RT = mean(RT)) %>%
     ungroup()
+  
+  # Calibrants plot
+
+  plot_calgraph <- ggplot() +
+    geom_point(data = analysis_data_descr,
+               mapping = aes(x = Theoretical_conc_uM,
+                             y = area_IC)) +
+  facet_wrap(~ Compound, scales = "free") +
+    theme_classic()
+  # plot_calgraph
   
   analysis_data_descr = add_mobile_phase_composition(data = analysis_data_descr,
                                                      eluent_file_name = filename_eluent,
@@ -788,16 +800,7 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
   
   # lm function to find RF of suspect compound
   linMod <- lm(logIE_predicted ~ log10(slope), data = analysis_data_descr %>%
-                 drop_na(slope))# %>%
-              # filter(!Compound %in% c("PFNS", "PFHpS", "PFPeS")))     # Take this out in final!!
-  
-  # plot the cal graphs of problematic compounds:
-  # plot_calgraph <- ggplot() +
-  #   geom_point(data = analysis_data %>%
-  #                filter(Compound == "PFNS"),
-  #              mapping = aes(x = Theoretical_amt,
-  #                            y = Area))
-  # plot_calgraph
+                 drop_na(slope))
   
   # Plot measured vs predicted
   plot_predictedIE_slope = ggplot() +
@@ -821,16 +824,17 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
   analytes_concentrations <- analysis_data_descr %>%
     # filter(is.na(slope)) %>%
     mutate(slope_pred = 10^((logIE_predicted - summary(linMod)$coefficients[1])/summary(linMod)$coefficients[2])) %>%
-    mutate(conc_pred = area_IC/slope_pred) %>%
-    select(colnames(analysis_data), slope_pred, conc_pred)
+    mutate(conc_pred_uM = area_IC/slope_pred) %>%
+    mutate(conc_pred_pg_uL = conc_pred_uM*Molecular_weight) %>% 
+    select(colnames(analysis_data), slope_pred, conc_pred_uM, conc_pred_pg_uL)
   
   plot_predicted_theoretical_conc <- ggplot() +
     geom_point(data = analytes_concentrations %>%
                  drop_na(Theoretical_conc_uM) %>%
                  group_by(Compound, Theoretical_conc_uM) %>%
-                 mutate(conc_pred = mean(conc_pred)) %>%
+                 mutate(conc_pred_uM = mean(conc_pred_uM)) %>%
                  ungroup(),
-               mapping = aes(Theoretical_conc_uM, conc_pred,
+               mapping = aes(Theoretical_conc_uM, conc_pred_uM,
                              color = Compound)) +
     geom_abline(slope = 1, intercept = 0) +
     scale_y_log10(limits = c(10^-5, 10^0)) +
@@ -844,7 +848,8 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
   
   
   #Return list with data, plot
-  data_predicted = list("plot_predictedIE_slope" = plot_predictedIE_slope,
+  data_predicted = list("all_calibration_plots" = plot_calgraph,
+                        "plot_predictedIE_slope" = plot_predictedIE_slope,
                         "plot_predicted_theoretical_conc" = plot_predicted_theoretical_conc,
                         "data" = analytes_concentrations)
   
