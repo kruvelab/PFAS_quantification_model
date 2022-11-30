@@ -81,7 +81,13 @@ viscosity <- function(organic,organic_modifier){
 }
 
 linear_regression <- function(y, x) {
-  df <- tibble(x = x, y = y) %>%
+  df <- tibble(x = x, #log(x), 
+               y = y, #log(y)
+  ) %>%
+    group_by(x) %>% 
+    mutate(y = mean(y)) %>% 
+    ungroup() %>% 
+    unique() %>% 
     na.omit()
   y = df$y
   x = df$x
@@ -92,8 +98,8 @@ linear_regression <- function(y, x) {
     return(regression_parameters)
   } else if (length(y) > 5) {
     for (i in length(y):5){
-      y = y[2:length(y)]
-      x = x[2:length(x)]
+      y = y[2:(length(y))]
+      x = x[2:(length(x))]
       slope = summary(lm(y ~ x))$coefficients[2]
       intercept = summary(lm(y ~ x))$coefficients[1]
       residuals = (y - (slope*x +intercept))/y*100
@@ -111,6 +117,53 @@ linear_regression <- function(y, x) {
     return(regression_parameters)
   }
 }
+
+
+# linear_regression <- function(y, x) {
+#   df <- tibble(x = x, #log(x), 
+#                y = y, #log(y)
+#                ) %>%
+#     group_by(x) %>% 
+#     mutate(y = mean(y)) %>% 
+#     ungroup() %>% 
+#     unique() %>% 
+#     na.omit()
+#    y = df$y
+#    x = df$x
+#   
+#   
+#   if(length(x) == 0){
+#     slope = NA
+#     intercept = NA
+#     regression_parameters <- list("slope" = slope, "intercept" = intercept)
+#     return(regression_parameters)
+#   } else if (length(y) > 5) {
+#     for (i in length(y):5){
+#       y = y[1:(length(y)-1)]
+#       x = x[1:(length(x)-1)]
+#       slope = summary(lm(y ~ x))$coefficients[2]
+#       intercept = summary(lm(y ~ x))$coefficients[1]
+#       residuals = (y - (slope*x +intercept))/y*100
+#       regression_parameters <- list("slope" = slope, "intercept" = intercept)
+#       if (max(abs(residuals)) < 50) {
+#         return(regression_parameters)
+#         break
+#       }
+#     }
+#     return(regression_parameters)
+#   } else {
+#     slope = summary(lm(y ~ x))$coefficients[2]
+#     intercept = summary(lm(y ~ x))$coefficients[1]
+#     regression_parameters <- list("slope" = slope, "intercept" = intercept)
+#     return(regression_parameters)
+#   }
+# }
+
+# model <- lm(y ~ x)
+# res <- resid(model)
+# plot(fitted(model), res)
+# plot(fitted(model), residuals)
+
 
 read_excel_allsheets <- function(filename) {
   data = tibble()
@@ -746,7 +799,7 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
   SMILES_data_cal <- read_SMILES(cal_filename_smiles, compounds_to_be_removed_as_list)
   #suspects data from analysis, filtered by smiles
   analysis_data_sus <- read_excel_allsheets(sus_filename_data)
-  SMILES_data_sus <- read_SMILES(sus_filename_smiles, compounds_to_be_removed_as_list)
+  SMILES_data_sus <- read_SMILES(sus_filename_smiles)
   analysis_data_sus <- analysis_data_sus %>%
     mutate(Theoretical_amt = replace(Theoretical_amt , grepl("NaN", Theoretical_amt, fixed = TRUE), NA)) %>%
     left_join(SMILES_data_sus) %>%

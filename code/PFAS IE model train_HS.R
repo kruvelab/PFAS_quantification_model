@@ -1,5 +1,5 @@
 
-setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant_HS")
+setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
 #setwd("/GitHub/PFAS_semi_quant_HS")
 source("code/functions.R")
 library(caTools)
@@ -56,43 +56,71 @@ data_clean = cleaning_data(data_all_binded)
 logIE_pred_model_train_test = training_logIE_pred_model(data = data_clean,
                                                         split = 0.8)
 
+logIE_pred_model_train_test$metrics
+
 IE_slope_cor = ggplot() +
   geom_point(data = logIE_pred_model_train_test$data$training_set,
              mapping = aes(logIE, logIE_predicted),
-             color = "light grey",
-             alpha = 0.5,
+             color = "#515251",
+             alpha = 0.8,
              size = 3) +
   geom_point(data = logIE_pred_model_train_test$data$test_set,
              mapping = aes(logIE, logIE_predicted),
-             color = "blue",
-             alpha = 0.5,
+             color = "#7CB368",
+             alpha = 0.8,
              size = 3) +
-  labs(title = "Training set", 
+  geom_abline(intercept = -1, slope = 1) +
+  geom_abline(intercept = 1, slope = 1) +
+  labs(#title = "Training set", 
        x = "Measured logIE",
        y = "Predicted logIE")+
-  theme(axis.text = element_text(size=12),
-        plot.title = element_text(size = 12),
+  theme(plot.title = element_text(size = 14),
         plot.background = element_rect(fill = "white"),
         panel.background = element_rect(fill = "white"),
         axis.line.y = element_line(size = 1, color = "black"),
         axis.line.x = element_line(size = 1, color = "black"),
-        axis.title.x = element_text(size=12),
-        axis.title.y = element_text(size=12))+
+        axis.title.x = element_text(size=14),
+        axis.title.y = element_text(size=14),
+        aspect.ratio = 1,
+        axis.text = element_text(family = font,
+                                size = fontsize,
+                               color = basecolor),
+        legend.key = element_blank(),
+        strip.background = element_blank(),
+        text = element_text(family = font,
+                            size = fontsize,
+                            color = basecolor))+
   geom_abline(slope = 1, intercept = 0) +
   facet_wrap(~data_type)
 
 IE_slope_cor
+ggsave(IE_slope_cor, "logIE_test_train.png", device = NULL)
+
+ggplotly(IE_slope_cor)
 
 
 ## ---- Training the model with all data ----
 logIE_pred_model = training_logIE_pred_model(data = data_clean)
-
 
 logIE_pred_model$metrics
 
 #saveRDS(logIE_pred_model, file="model_PFAS_logIE.RData")
 
 
+# mean error 
+
+logIE_pred_model_train_test_error <- logIE_pred_model_train_test$data$test_set %>%
+  mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
+                                TRUE ~ 10^logIE_predicted/10^logIE)) %>%
+  group_by(name) %>% 
+  mutate(mean_pred_error = mean(pred_error)) %>% 
+  ungroup() %>% 
+  select(pred_error, mean_pred_error, everything())
+
+# mean pred error
+mean(logIE_pred_model_train_test_error$pred_error)
+
+mean(unique(logIE_pred_model_train_test_error$mean_pred_error))
 
 
 
