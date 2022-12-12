@@ -1,5 +1,5 @@
 
-setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
+setwd("C:/Users/karpa/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
 #setwd("/GitHub/PFAS_semi_quant_HS")
 source("code/functions.R")
 library(caTools)
@@ -15,7 +15,7 @@ library(cowplot)
 ## ---- Reading in LC-MS data of calibration solutions ----
 Orbitrap_dataset_raw = read_excel_allsheets(filename = "data/Batch 1 Semi Quant w frag.xlsx")
 
-Orbitrap_dataset_raw = Orbitrap_dataset_raw %>% 
+Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   group_by(Compound) %>%
   mutate(Theoretical_amt = case_when(
     Filename == "2020071205-cal21" ~ mean(Theoretical_amt[Filename=="2020071205-cal22"]),
@@ -33,7 +33,7 @@ data = Orbitrap_dataset_raw %>%
   drop_na(SMILES) %>%
   mutate(RT = as.numeric(RT),
          area_IC = Area*IC,
-         Theoretical_conc_uM = Theoretical_amt/Molecular_weight) %>%       
+         Theoretical_conc_uM = Theoretical_amt/Molecular_weight) %>%
   group_by(SMILES, Compound) %>%
   summarize(slope = linear_regression(area_IC, Theoretical_conc_uM)$slope,
             RT = mean(RT)) %>%
@@ -62,18 +62,17 @@ IE_slope_cor = ggplot() +
   geom_point(data = logIE_pred_model_train_test$data$training_set,
              mapping = aes(logIE, logIE_predicted),
              color = "#515251",
-             alpha = 0.8,
+             alpha = 0.7,
              size = 3) +
   geom_point(data = logIE_pred_model_train_test$data$test_set,
              mapping = aes(logIE, logIE_predicted),
              color = "#7CB368",
-             alpha = 0.8,
+             alpha = 0.7,
              size = 3) +
   geom_abline(intercept = -1, slope = 1) +
   geom_abline(intercept = 1, slope = 1) +
-  labs(#title = "Training set", 
-       x = "Measured logIE",
-       y = "Predicted logIE")+
+  xlab(substitute(paste("log", italic("IE"))["predicted"]))  +
+  ylab(substitute(paste("log", italic("IE"))["measured"])) +
   theme(plot.title = element_text(size = 14),
         plot.background = element_rect(fill = "white"),
         panel.background = element_rect(fill = "white"),
@@ -91,30 +90,35 @@ IE_slope_cor = ggplot() +
                             size = fontsize,
                             color = basecolor))+
   geom_abline(slope = 1, intercept = 0) +
-  facet_wrap(~data_type)
+  facet_wrap(~data_type) +
+  annotation_logticks() +
+  my_theme
 
 IE_slope_cor
-ggsave(IE_slope_cor, "logIE_test_train.png", device = NULL)
+#ggsave(IE_slope_cor,  filename = "logIE_test_train.png", device = NULL)
+#ggsave(IE_slope_cor, filename = "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/NORMAN/manuscript_figures/MS2Quant_incorrectMS2Struct.svg", width=5, height=5, units = "cm")
+
 
 ggplotly(IE_slope_cor)
 
 
 ## ---- Training the model with all data ----
-logIE_pred_model = training_logIE_pred_model(data = data_clean)
+logIE_pred_model = training_logIE_pred_model(data = data_clean,
+                                             bestTune_optimized_model = logIE_pred_model_train_test$model$bestTune)
 
 logIE_pred_model$metrics
 
-#saveRDS(logIE_pred_model, file="model_PFAS_logIE.RData")
+saveRDS(logIE_pred_model_train_test, file="221205_model_PFAS_train_test_logIE.RData")
 
 
-# mean error 
+# mean error
 
 logIE_pred_model_train_test_error <- logIE_pred_model_train_test$data$test_set %>%
   mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
                                 TRUE ~ 10^logIE_predicted/10^logIE)) %>%
-  group_by(name) %>% 
-  mutate(mean_pred_error = mean(pred_error)) %>% 
-  ungroup() %>% 
+  group_by(name) %>%
+  mutate(mean_pred_error = mean(pred_error)) %>%
+  ungroup() %>%
   select(pred_error, mean_pred_error, everything())
 
 # mean pred error
