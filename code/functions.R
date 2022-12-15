@@ -826,7 +826,7 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
   SMILES_data_cal <- read_SMILES(cal_filename_smiles, compounds_to_be_removed_as_list)
   #suspects data from analysis, filtered by smiles
   analysis_data_sus <- read_excel_allsheets(sus_filename_data)
-  SMILES_data_sus <- read_SMILES(sus_filename_smiles, compounds_to_be_removed_as_list)
+  SMILES_data_sus <- read_SMILES(sus_filename_smiles)
   analysis_data_sus <- analysis_data_sus %>%
     mutate(Theoretical_amt = replace(Theoretical_amt , grepl("NaN", Theoretical_amt, fixed = TRUE), NA)) %>%
     left_join(SMILES_data_sus) %>%
@@ -843,7 +843,6 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
            Theoretical_conc_uM = Theoretical_amt/Molecular_weight)
 
   analysis_data_descr <- analysis_data %>%
-    #filter(Compound == "11Cl-PF3OUdS") %>%
     group_by(Compound) %>%
     mutate(slope = linear_regression(area_IC, Theoretical_conc_uM)$slope,
            intercept = linear_regression(area_IC, Theoretical_conc_uM)$intercept,

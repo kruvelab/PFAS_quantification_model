@@ -21,7 +21,7 @@ setwd(admin)
 cal_filename_data <-  paste0(admin,"/data/Batch 1 Semi Quant w frag.xlsx")
 cal_filename_smiles <- paste0(admin,"/data/Smiles_for_Target_PFAS_semicolon.csv")
 sus_filename_data <- paste0(admin,"/Melanie_new_suspects/20210810_Melanie_Suspect _Screening_TF.xlsx")
-sus_filename_smiles <- paste0(admin,"/Melanie_new_suspects/suspects_smiles_melanie_updated_semicolon.csv")
+sus_filename_smiles <- paste0(admin,"/Melanie_new_suspects/suspects_smiles_melanie_updated_semicolon2.csv")
 logIE_pred_model <- readRDS(paste0(admin,"/models/221205_model_PFAS_allData_logIE.Rdata"))
 
 melanie_concentrations_pred <- concentration_forAnalytes_model_cal_separateFile(cal_filename_data,
