@@ -323,7 +323,7 @@ anchoring = function(data_to_be_anchored,
       mutate(data_type = "PFAS") %>%
       bind_rows(old_training_data %>%
                   select(name, SMILES, logIE, pH.aq., polarity_index, viscosity, surface_tension, NH4) %>%
-                  mutate(data_type = "other")
+                  mutate(data_type = "non-PFAS")
       )
   }
   return(data_to_be_anchored)

@@ -1,5 +1,5 @@
 
-setwd("C:/Users/karpa/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
+setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
 #setwd("/GitHub/PFAS_semi_quant_HS")
 source("code/functions.R")
 library(caTools)
@@ -112,6 +112,7 @@ saveRDS(logIE_pred_model_train_test, file="221205_model_PFAS_train_test_logIE.RD
 
 
 # mean error
+logIE_pred_model_train_test <- readRDS(file="models/221205_model_PFAS_allData_logIE.RData")
 
 logIE_pred_model_train_test_error <- logIE_pred_model_train_test$data$test_set %>%
   mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
@@ -127,8 +128,11 @@ mean(logIE_pred_model_train_test_error$pred_error)
 mean(unique(logIE_pred_model_train_test_error$mean_pred_error))
 
 
+# mean error of PFAS
+logIE_pred_model_test_error_pfas <- logIE_pred_model_train_test$data$test_set %>%
+  filter(data_type == "PFAS") %>% 
+  mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
+                                TRUE ~ 10^logIE_predicted/10^logIE))
 
-
-
-
+mean(logIE_pred_model_test_error_pfas$pred_error)
 
