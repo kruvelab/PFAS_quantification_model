@@ -1,6 +1,4 @@
-
 setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
-#setwd("/GitHub/PFAS_semi_quant_HS")
 source("code/functions.R")
 library(caTools)
 library(tidyverse)
@@ -9,11 +7,11 @@ library(plotly)
 library(cowplot)
 
 #-------------------------------------------------------------
-# Building model for IE pred in neg mode (joining Jaanus's data)
+# Building model for IE pred in neg mode (joining Liigand's data)
 #-------------------------------------------------------------
 
 ## ---- Reading in LC-MS data of calibration solutions ----
-Orbitrap_dataset_raw = read_excel_allsheets(filename = "data/Batch 1 Semi Quant w frag.xlsx")
+Orbitrap_dataset_raw = read_excel_allsheets(filename = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx")
 
 Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   group_by(Compound) %>%
@@ -24,7 +22,7 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   filter(Theoretical_amt != "NaN")
 
 ## ---- Reading in SMILES for calibration compounds, removing NAs and adducts, mono PAPs, HFPO-DA ----
-SMILES_data = read_SMILES(filename = "data/Smiles_for_Target_PFAS_semicolon.csv",
+SMILES_data = read_SMILES(filename = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
                           compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
 
 ## ---- Joining all collected data to one tibble, removing missing values, calculating slopes ----
@@ -40,11 +38,15 @@ data = Orbitrap_dataset_raw %>%
   ungroup()
 
 data = add_mobile_phase_composition(data = data,
-                                    eluent_file_name = "data/eluent.csv")
+                                    eluent_file_name = "data_for_modelling/eluent.csv")
 
 ## ---- Converting slopes to logIE with PFOS as anchor ----
 training = anchoring(data_to_be_anchored = data,
-                     data_containing_anchor = "data/IE_training_data/190714_negative_model_logIE_data.csv")
+                     data_containing_anchor = "data_for_modelling/IE_training_data/190714_negative_model_logIE_data.csv")
+
+## If only modelling with original data from Liigand et al
+# training = training %>%
+#   filter(data_type == "non-PFAS")
 
 ## ---- Calculating PaDEL descriptors to all compounds based on SMILES ----
 data_all_binded = PaDEL_original(training)
@@ -56,76 +58,117 @@ data_clean = cleaning_data(data_all_binded)
 logIE_pred_model_train_test = training_logIE_pred_model(data = data_clean,
                                                         split = 0.8)
 
+# metrics of trained model
 logIE_pred_model_train_test$metrics
 
+#---- correlation plot ----
 IE_slope_cor = ggplot() +
   geom_point(data = logIE_pred_model_train_test$data$training_set,
-             mapping = aes(logIE, logIE_predicted),
-             color = "#515251",
-             alpha = 0.7,
-             size = 3) +
+             mapping = aes(logIE, logIE_predicted)) +
   geom_point(data = logIE_pred_model_train_test$data$test_set,
-             mapping = aes(logIE, logIE_predicted),
-             color = "#7CB368",
-             alpha = 0.7,
-             size = 3) +
+             mapping = aes(logIE, logIE_predicted),color = "red") +
   geom_abline(intercept = -1, slope = 1) +
-  geom_abline(intercept = 1, slope = 1) +
+  geom_abline(intercept =  1, slope = 1) +
+  geom_abline(intercept =  0, slope = 1) +
   xlab(substitute(paste("log", italic("IE"))["predicted"]))  +
   ylab(substitute(paste("log", italic("IE"))["measured"])) +
-  theme(plot.title = element_text(size = 14),
-        plot.background = element_rect(fill = "white"),
-        panel.background = element_rect(fill = "white"),
-        axis.line.y = element_line(size = 1, color = "black"),
-        axis.line.x = element_line(size = 1, color = "black"),
-        axis.title.x = element_text(size=14),
-        axis.title.y = element_text(size=14),
-        aspect.ratio = 1,
-        axis.text = element_text(family = font,
-                                size = fontsize,
-                               color = basecolor),
-        legend.key = element_blank(),
-        strip.background = element_blank(),
-        text = element_text(family = font,
-                            size = fontsize,
-                            color = basecolor))+
-  geom_abline(slope = 1, intercept = 0) +
-  facet_wrap(~data_type) +
-  annotation_logticks() +
-  my_theme
-
+  theme_classic() +
+  theme(aspect.ratio = 1,
+        legend.key = element_blank()) 
+ 
 IE_slope_cor
-#ggsave(IE_slope_cor,  filename = "logIE_test_train.png", device = NULL)
-#ggsave(IE_slope_cor, filename = "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/projects_measurements/NORMAN/manuscript_figures/MS2Quant_incorrectMS2Struct.svg", width=5, height=5, units = "cm")
 
 
-ggplotly(IE_slope_cor)
+# Save model, data, metrics and varImp
+#saveRDS(logIE_pred_model_train_test, file="models/230220_logIE_model_withoutPFAS_train_test.RData")
 
 
-## ---- Training the model with all data ----
+#-------------------------------------------
+# ---- Training the model with all data ----
+#-------------------------------------------
 logIE_pred_model = training_logIE_pred_model(data = data_clean,
                                              bestTune_optimized_model = logIE_pred_model_train_test$model$bestTune)
 
 logIE_pred_model$metrics
+#saveRDS(logIE_pred_model, file="models/230220_logIE_model_withoutPFAS_allData.RData")
 
-saveRDS(logIE_pred_model_train_test, file="221205_model_PFAS_train_test_logIE.RData")
+
+# ----------------------------------------------
+# Modelling with leave-one-out approach for PFAS
+# ----------------------------------------------
+
+# train model by leaving one out each time
+
+SMILES_list_PFAS <- data %>%
+  select(SMILES, Compound) %>%
+  unique()
+
+predicted_PFAS_IEs <- tibble()
+
+for (i in 1:length(SMILES_list_PFAS$SMILES)) {
+  
+  #remove one PFAS from the training set
+  data_forTraining <- data_clean %>%
+    filter(!grepl(SMILES_list_PFAS[i,1], SMILES, fixed = TRUE)) %>% 
+    filter(!grepl("perfluorooctanesulfonic acid", name, fixed = TRUE))
+  
+  #model
+  logIE_pred_model_new = training_logIE_pred_model(data = data_forTraining,
+                                                   split = 1,
+                                                   save_model_name =  paste("models/leave_one_out_approach/model_", i,"_without_PFOS_corrected", sep = ""))
+  
+  #predict
+  IE_pred_for_PFAS <- data_clean %>%
+    filter(grepl(SMILES_list_PFAS[i,1], SMILES, fixed = TRUE)) %>% 
+    mutate(logIE_predicted = predict(logIE_pred_model_new$model, newdata = IE_pred_for_PFAS)) %>% 
+    mutate(model_nr = paste("model_", i,"_corrected", sep = "")) %>% 
+    select(logIE_predicted, everything())
+  
+  predicted_PFAS_IEs <- predicted_PFAS_IEs %>%
+    bind_rows(IE_pred_for_PFAS)
+}
+
+#write_delim(predicted_PFAS_IEs, "results/modelling_results/PFAS_pred_logIEs_with_leave_one_out_approach.csv", delim =",")
 
 
+
+# ------------------------------------------------------------
+# ---- Calculating additional model evaluation parameters ----
+# ------------------------------------------------------------
+
+logIE_pred_model_train_test <- readRDS(file="models/230220_logIE_model_withPFAS_train_test.RData")
+
+#only PFAS
+data_for_error_calc_train = logIE_pred_model_train_test$data$training_set %>%
+  filter(data_type == "PFAS")
+
+data_for_error_calc_test = logIE_pred_model_train_test$data$test_set %>%
+  filter(data_type == "PFAS")
+
+rmse_train <- rmse(data_for_error_calc_train$logIE, data_for_error_calc_train$logIE_predicted)
+rmse_test <- rmse(data_for_error_calc_test$logIE, data_for_error_calc_test$logIE_predicted)
+
+  
 # mean error
-logIE_pred_model_train_test <- readRDS(file="models/221205_model_PFAS_allData_logIE.RData")
-
-logIE_pred_model_train_test_error <- logIE_pred_model_train_test$data$test_set %>%
+logIE_pred_model_train_test_error <- PFAS_LOO_data %>%
+  #filter(data_type == "PFAS") %>% 
   mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
                                 TRUE ~ 10^logIE_predicted/10^logIE)) %>%
-  group_by(name) %>%
-  mutate(mean_pred_error = mean(pred_error)) %>%
-  ungroup() %>%
-  select(pred_error, mean_pred_error, everything())
+  # group_by(name) %>%
+  # mutate(mean_pred_error = mean(pred_error)) %>%
+  # ungroup() %>%
+  select(pred_error, everything())
+
 
 # mean pred error
 mean(logIE_pred_model_train_test_error$pred_error)
 
-mean(unique(logIE_pred_model_train_test_error$mean_pred_error))
+# geometric mean
+exp(mean(log(logIE_pred_model_train_test_error$pred_error)))
+
+# median pred error
+median(logIE_pred_model_train_test_error$pred_error)
+
 
 
 # mean error of PFAS

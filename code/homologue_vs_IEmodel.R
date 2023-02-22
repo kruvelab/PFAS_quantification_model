@@ -1,6 +1,4 @@
 
-# First need to run PFAS IE model train_HS
-
 #-----------------------------------------------------------
 # Homologous series vs ML model predictions - concentrations
 #-----------------------------------------------------------
@@ -10,7 +8,6 @@
 # find homolog series quantifications
 # train model by leaving one out each time
 # Comparison in table
-# profit
 
 
 # Find homolog series compounds
@@ -41,7 +38,7 @@ homologs_CF2CF2 <- homologs %>%
 
 # save out actual concentrations
 
-Orbitrap_dataset_raw = read_excel_allsheets(filename = "data/Batch 1 Semi Quant w frag.xlsx")
+Orbitrap_dataset_raw = read_excel_allsheets(filename = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx")
 
 Orbitrap_dataset_raw = Orbitrap_dataset_raw %>% 
   group_by(Compound) %>%
@@ -72,8 +69,8 @@ data_real_conc = Orbitrap_dataset_raw %>%
 
 # find homolog series quantifications
 
-data_homolog_conc_CF2 <- concentration_forAnalytes_homolog(filename_data = "data/Batch 1 Semi Quant w frag.xlsx",
-                                                           filename_smiles = "data/Smiles_for_Target_PFAS_semicolon.csv",
+data_homolog_conc_CF2 <- concentration_forAnalytes_homolog(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx",
+                                                           filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
                                                            homolog_pattern_SMILES = "F[C+2]F",
                                                            findHomolog_onlyForAnalytes = FALSE) 
 
@@ -100,34 +97,39 @@ data_homolog_conc_CF2CF2_intercept <- concentration_forAnalytes_homolog_withInte
 
 
 
-
+# ----------------------------------------
 # train model by leaving one out each time
+# ----------------------------------------
 
 # for CF2 compounds
 SMILES_list_homolog_CF2 <- homologs_CF2 %>%
   select(Compound, SMILES.x) %>%
   unique()
 
+# find all pfas models from LOO
+all_pfas_models_LOO <- read_delim("results/modelling_results/PFAS_pred_logIEs_with_leave_one_out_approach.csv")
+
+all_pfas_models_LOO <- all_pfas_models_LOO %>% 
+  filter(model_nr != "model_12")
+
 predicted_concentrations <- tibble()
 
-for (i in 1:length(SMILES_list_homolog_CF2$SMILES.x)) {
-  data_forTraining <- data_clean %>%
-    filter(!grepl(SMILES_list_homolog_CF2[i,2], SMILES, fixed = TRUE))
+for (i in 1:length(SMILES_list_homolog_CF2$Compound)) {
   
-  setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant_HS/code/homologue_series_models")
-  logIE_pred_model_new = training_logIE_pred_model(data = data_forTraining,
-                                                   save_model_name =  paste("without_homologue", i, sep = "_"))
+  model_to_read_in <- all_pfas_models_LOO %>% 
+    filter(grepl(SMILES_list_homolog_CF2[i,1], name, fixed = TRUE))
   
-  setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant_HS")
-  conc_forAll_compounds <- concentration_forAnalytes_model(filename_data = "data/Batch 1 Semi Quant w frag.xlsx", 
-                                                           filename_smiles = "data/Smiles_for_Target_PFAS_semicolon.csv", 
-                                                           filename_eluent = "data/eluent.csv", 
-                                                           logIE_pred_model_new,
+  model_here = readRDS(file = paste("models/leave_one_out_approach/", model_to_read_in$model_nr, sep=""))
+  
+  conc_forAll_compounds <- concentration_forAnalytes_model(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx", 
+                                                           filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv", 
+                                                           filename_eluent = "data_for_modelling/eluent.csv", 
+                                                           model_here,
                                                            compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
   
   
   conc_pred_forSuspect <- conc_forAll_compounds$data %>%
-    filter(grepl(SMILES_list_homolog_CF2[i,2], SMILES, fixed = TRUE))
+    filter(grepl(SMILES_list_homolog_CF2[i,1], name, fixed = TRUE))
   
   predicted_concentrations <- predicted_concentrations %>%
     bind_rows(conc_pred_forSuspect)

@@ -15,6 +15,7 @@ library(Metrics)
 library(readxl)
 library(plotly)
 
+
 molecularmass <- function(smiles){
   #convert SMILES to chemical formula
   molecule <- parse.smiles(smiles)[[1]]
@@ -278,7 +279,7 @@ PaDEL_original = function(standards) {
     select(-Name)
 
   write_delim(descs,
-              "data/descs_calc.csv",
+              "data_for_modelling/descs_calc.csv",
               delim = ",")
 
   return(descs)
@@ -376,6 +377,9 @@ training_logIE_pred_model = function(data,
   #split = 0.8
   set.seed(123)
   if (!is.null(split)) {
+    if(split == 1) {
+      training_set = data
+    } else {
     training_set = tibble()
     test_set = tibble()
     for (data_type_this in levels(factor(data$data_type))) {
@@ -394,7 +398,7 @@ training_logIE_pred_model = function(data,
         bind_rows(data_this %>%
                     filter(!split_train_test)) %>%
         select(-split_train_test)
-
+      }
     }
 
       set.seed(123)
@@ -449,7 +453,7 @@ training_logIE_pred_model = function(data,
     saveRDS(model,save_model_name)
   }
 
-  if (!is.null(split)) {
+  if (!is.null(split) & (split != 1)) {
     test_set <- test_set %>%
       mutate(logIE_predicted = predict(model, newdata = test_set))
     RMSE_test_set = rmse(test_set$logIE, test_set$logIE_predicted)

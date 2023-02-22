@@ -1,0 +1,204 @@
+---
+title: "Semi-quantification"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, , message = FALSE, warning = FALSE}
+setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant_HS")
+source("code/functions.R")
+library(caTools)
+library(tidyverse)
+library(caret)
+library(plotly)
+library(cowplot)
+
+
+## ---- Reading in LC-MS data of calibration solutions ----
+Orbitrap_dataset_raw = read_excel_allsheets(filename = "data/Batch 1 Semi Quant w frag.xlsx")
+
+Orbitrap_dataset_raw = Orbitrap_dataset_raw %>% 
+  group_by(Compound) %>%
+  mutate(Theoretical_amt = case_when(
+    Filename == "2020071205-cal21" ~ mean(Theoretical_amt[Filename=="2020071205-cal22"]),
+    TRUE ~ Theoretical_amt))%>%
+  ungroup() %>%
+  filter(Theoretical_amt != "NaN")
+
+## ---- Reading in SMILES for calibration compounds, removing NAs and adducts, mono PAPs, HFPO-DA ----
+SMILES_data = read_SMILES(filename = "data/Smiles_for_Target_PFAS_semicolon.csv",
+                          compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
+
+
+```
+
+## Semi-quantification: model development
+All existing data was used to train IE prediction model for ESI-. For this, training and test sets of Thomas' data were joined. This model can be used for any semi-quantification of PFAS. 
+
+The code has been cleaned and organized in functions for smooth retraining if additional data is available for updating the model. The code and the model can be found from GitHub: https://github.com/kruvelab/PFOA_semi_quant
+
+
+## Semi-quantification: Homologous series vs ML model predictions
+In addition to updating the IE prediction model, homologue series was tested for semi-quantification. For this, the following steps were taken:
+
+1) Finding homologue series compounds
+2) Computing the calibration graph for all of the chemicals
+3) Assigning the calibration graph of the closest homologue to each analyte
+4) Semi-quantification with the calibration graph of the homologue
+
+This was repeated for all chemicals in the homologue series.
+
+In addition the IE prediction model was used under comparable conditions. For this, following steps were taken:
+
+1) Training IE predictive model based on all of the analytical standard, excluding the analyte
+2) Predicting ionization efficiency for the analyte with the trained IE model
+3) Predicting response factors from the predicted ionization efficiency by using RF vs IE plot of all analytical standards
+4) Semi-quantification based on the predicted response factors
+
+Finally, the results from the two approaches were compared visually and numerically.
+
+### Finding homologue series compounds
+From Thomas' data, a dataset was generated, which contained all compounds that had at least one homologue within the dataset.
+
+**Assumption:** Two compounds are considered homologues when their difference in molecular formula is CF~2~. 
+
+This summary is made on the example of CF~2~ homologues only, see below. Data for CF~2~CF~2~ homologues can be calculated if needed.
+
+```{r, message = FALSE, warning = FALSE, echo = FALSE}
+data = Orbitrap_dataset_raw %>%
+  left_join(SMILES_data) %>%
+  drop_na(SMILES)
+
+SMILES_forHomolog <- data %>%
+  select(Compound, SMILES) %>%
+  unique()
+
+SMILEs_match <- SMILES_forHomolog %>%
+  left_join(SMILES_forHomolog %>%
+              select(SMILES, Compound), by = character())
+
+homologs <- SMILEs_match %>%
+  group_by(SMILES.x, SMILES.y) %>%
+  mutate(pattern_CF2 = is_homologue(SMILES.x, SMILES.y, "F[C+2]F")) %>% 
+  ungroup()
+
+homologs_CF2 <- homologs %>%
+  filter(!is.na(pattern_CF2)) %>%
+  select(Compound.x, Compound.y, pattern_CF2) %>%
+  rename(Compound = Compound.x, 
+         Homologue = Compound.y)
+
+homologs_CF2
+```
+
+### Semi-quantification with homologue
+
+For each compound, calibration curve of a homologue was used for semi-quantification. If two homologues existed (bigger and smaller), quantification was done with both and both results are shown on the graph as well as taken into account in performance calculations. 
+
+The IE approach assumes that the intercept of the calibration graph is statistically insignificant or much smaller than the peak areas. Therefore, two different approaches were also used for the quantification with the homologue series.
+
+**First approach:** Only slope (RF) was used to calculate concentrations (regression line was not forced to go though zero). 
+
+($conc = area/slope_{homologue}$)
+
+**Second approach:** Both slope and intercept were used to calculate concentrations. 
+
+($conc = (area-intercept_{homologue})/slope_{homologue}$)
+
+
+### Predicting ionization efficiency and response factors for homologue series compounds + quantification
+
+For each homologue series compound, the compound was removed from the training data and prediction model was trained (10 prediction models were trained in total). Then, the model was used to predict IE of the compound. The predicted ionization efficiency values were correlated with experimental response factors (that is slope) for all analytical standards, this correlation was used to predict a response factor for the analyte from the IE.  
+
+($conc = area/slope_{predicted}$)
+
+### Visual comparison
+Comparing semi-quantification results from predicted slopes and homologue series compounds slopes with theoretical concentration.
+Ideal regression and ten-times error lines were added.
+
+
+```{r, warning=FALSE, fig.height=4, fig.width=7, echo=FALSE}
+summary_table_CF2_filtered <- read.csv2("C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/Topics_exp_codes/Lara_PFAS/Melanie/summary_table_CF2_withintercept_filtered.csv")
+
+# Plot of concentrations calculated with predicted IEs vs experimental
+IE_c_plot = ggplot(data = summary_table_CF2_filtered)+
+  geom_point(mapping = aes(x = Theoretical_conc_uM,
+                           y = conc_pred,
+                           color = Compound)) +
+  scale_y_log10(limits = c(10^-5, 10^0)) +
+  scale_x_log10(limits = c(10^-5, 10^0)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_abline(slope = 1, intercept = 1) +
+  geom_abline(slope = 1, intercept = -1) +
+  theme(aspect.ratio = 1,
+        legend.position = "none"
+        )
+
+# Plot of concentrations calculated with homologue series compound vs experimental
+homolog_c_plot = ggplot(data = summary_table_CF2_filtered)+
+  geom_point(mapping = aes(x = Theoretical_conc_uM,
+                           y = conc_homolog,
+                           color = Compound,
+                           text = Compound_homolog)) +
+  scale_y_log10(limits = c(10^-5, 10^0)) +
+  scale_x_log10(limits = c(10^-5, 10^0)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_abline(slope = 1, intercept = 1) +
+  geom_abline(slope = 1, intercept = -1) +
+  geom_abline(slope = 1, intercept = 1) +
+   theme(aspect.ratio = 1,
+         legend.position = "none"
+         )
+
+
+# Plot of concentrations calculated with homologue series compound vs experimental
+homolog_c_plot_intercept = ggplot(data = summary_table_CF2_filtered)+
+  geom_point(mapping = aes(x = Theoretical_conc_uM,
+                           y = conc_homolog_withIntercept,
+                           color = Compound,
+                           text = Compound_homolog)) +
+  scale_y_log10(limits = c(10^-5, 10^0)) +
+  scale_x_log10(limits = c(10^-5, 10^0)) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_abline(slope = 1, intercept = 1) +
+  geom_abline(slope = 1, intercept = -1) +
+  geom_abline(slope = 1, intercept = 1) +
+   theme(aspect.ratio = 1,
+         legend.position = "none"
+         )
+
+# plot(IE_c_plot)
+# plot(homolog_c_plot)
+# plot(homolog_c_plot_intercept)
+
+# Comparison
+plot_comp <- plot_grid(IE_c_plot, homolog_c_plot, homolog_c_plot_intercept, ncol = 3)
+plot_comp
+
+
+```
+
+## Results and interpretation
+The error factor for IE and homologue series, first approach, based semi-quantification are very similar ranging from 2.3x to 3.0x. Homologue series based approach shows slightly higher error factor; therefore, it can be concluded that a single IE based semi-quantification can be used for all PFAS and homologue series based quantification is not necessary. See results below.
+Importantly, for both methods we see that the quantification is less accurate for lower concentration level. This probably arises from slightly reduced linearity at low concentration and/or importance of intercept at these low levels. 
+
+```{r, echo=FALSE}
+
+# Error calculations
+summary_table_CF2_filtered = summary_table_CF2_filtered %>%
+  mutate(error_IE = case_when(
+    Theoretical_conc_uM > conc_pred ~ Theoretical_conc_uM/conc_pred,
+    TRUE ~ conc_pred/Theoretical_conc_uM),
+    error_homolog = case_when(
+      Theoretical_conc_uM > conc_homolog ~ Theoretical_conc_uM/conc_homolog,
+      TRUE ~ conc_homolog/Theoretical_conc_uM),)
+
+summary_table_CF2_filtered %>%
+  na.omit() %>%
+  group_by(pattern) %>%
+  summarize(error_IE = mean(error_IE),
+            error_homolog = mean(error_homolog)) %>%
+  ungroup()
+```
+
+
+
