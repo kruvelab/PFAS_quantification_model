@@ -89,15 +89,13 @@ my_theme <- theme(
 
 
 
-        
 
-
-#--- plot: correlation plot for predicted and measured ionization efficiencies ----
+#---- plot: correlation plot for predicted and measured ionization efficiencies ----
 
 setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
 
 # read in model
-logIE_pred_model_PFAS_allData <- readRDS(file="models/230220_logIE_model_withPFAS_train_test.RData")
+logIE_pred_model_PFAS_allData <- readRDS(file="models/230329_logIE_model_withPFAS_train_test.RData")
 
 #correlation plot
 IE_slope_cor = ggplot() +
@@ -140,19 +138,19 @@ IE_slope_cor = ggplot() +
   my_theme
 
 IE_slope_cor
-# ggsave(IE_slope_cor,  filename = "results/modelling_results/221205_model_PFAS_train_test_logIE.png", width=16, height=8, units = "cm", device = NULL)
-# ggsave(IE_slope_cor, filename = "results/modelling_results/221205_model_PFAS_train_test_logIE.svg", width=16, height=8, units = "cm")
+# ggsave(IE_slope_cor,  filename = "results/modelling_results/230329_model_PFAS_train_test_logIE.png", width=16, height=8, units = "cm", device = NULL)
+# ggsave(IE_slope_cor, filename = "results/modelling_results/230329_model_PFAS_train_test_logIE.svg", width=16, height=8, units = "cm")
 
 ggplotly(IE_slope_cor)
 
-#--- plot: correlation plot: PFAS IE predictions with model without PFAS ----
+#---- plot: correlation plot: PFAS IE predictions with model without PFAS ----
 setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
 
 # read in model
 logIE_pred_model_without_PFAS <- readRDS(file="models/230220_logIE_model_withoutPFAS_allData.RData")
 
 #read in PFAS IE data
-PFAS_data = read_delim("data_for_modelling/PFAS_IE_values_anchored_PaDEL.csv")
+PFAS_data = read_delim("data_for_modelling/PFAS_logIE_anchored_PaDEL.csv")
 
 #predict IE values for PFAS
 PFAS_data = PFAS_data %>% 
@@ -204,16 +202,11 @@ rmse(PFAS_data$logIE, PFAS_data$logIE_predicted)
 
 
 
-#--- plot: correlation plot: PFAS IE predictions with leave-one-out approach ----
+#---- plot: correlation plot: PFAS IE predictions with leave-one-out approach ----
 setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
 
 #read in PFAS pred IE data
 PFAS_LOO_data = read_delim("results/modelling_results/PFAS_pred_logIEs_with_leave_one_out_approach.csv")
-
-#filter out wrong PFOS model
-PFAS_LOO_data = PFAS_LOO_data %>% 
-  filter(model_nr != "model_12")
-
 
 #correlation plot between predicted and anchored IE values for PFAS
 IE_slope_cor_model_LOO_PFAS = ggplot() +
@@ -260,8 +253,8 @@ rmse(PFAS_LOO_data$logIE, PFAS_LOO_data$logIE_predicted)
 #---- plot: cowplot - Liigand model vs leave-one-out approach predicted logIE for PFAS ---- 
 
 joined_plot1 = plot_grid(IE_slope_cor_model_without_PFAS, IE_slope_cor_model_LOO_PFAS) #, labels = c('A', 'B')
-# ggsave(joined_plot1,  filename = "results/modelling_results/230221_logIE_PFAS_oldModel_vs_LOO.png", width=16, height=7, units = "cm", device = NULL)
-# ggsave(joined_plot1, filename = "results/modelling_results/230221_logIE_PFAS_oldModel_vs_LOO.svg", width=16, height=7, units = "cm")
+# ggsave(joined_plot1,  filename = "results/modelling_results/230330_logIE_PFAS_oldModel_vs_LOO.png", width=16, height=7, units = "cm", device = NULL)
+# ggsave(joined_plot1, filename = "results/modelling_results/230330_logIE_PFAS_oldModel_vs_LOO.svg", width=16, height=7, units = "cm")
 
 #---- plot: homologue series quantification vs leave-one-out model quantification ---- 
 
@@ -353,5 +346,5 @@ joined_plot2 <- plot_grid(quant_homologue_CF2, quant_model_LOO_CF2)
 
 summary_table_CF2CF2 <- read_delim("results/homologue_vs_IEmodel_results/homolgoue_series_conc_summaries/summary_table_CF2CF2_filtered.csv")
 
-#--- plot: Fluorine mass balance (TF, EOF, PFAS (target + semi-quant)) ----
+#---- plot: Fluorine mass balance (TF, EOF, PFAS (target + semi-quant)) ----
 

@@ -75,8 +75,8 @@ data_homolog_conc_CF2 <- concentration_forAnalytes_homolog(filename_data = "data
                                                            findHomolog_onlyForAnalytes = FALSE) 
 
 
-data_homolog_conc_CF2_intercept <- concentration_forAnalytes_homolog_withIntercept(filename_data = "data/Batch 1 Semi Quant w frag.xlsx",
-                                                                                   filename_smiles = "data/Smiles_for_Target_PFAS_semicolon.csv",
+data_homolog_conc_CF2_intercept <- concentration_forAnalytes_homolog_withIntercept(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx",
+                                                                                   filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
                                                                                    homolog_pattern_SMILES = "F[C+2]F",
                                                                                    findHomolog_onlyForAnalytes = FALSE) 
 
@@ -84,85 +84,53 @@ data_homolog_conc_CF2_intercept <- concentration_forAnalytes_homolog_withInterce
 
 #CF2CF2
 
-data_homolog_conc_CF2CF2 <- concentration_forAnalytes_homolog(filename_data = "data/Batch 1 Semi Quant w frag.xlsx",
-                                                              filename_smiles = "data/Smiles_for_Target_PFAS_semicolon.csv",
+data_homolog_conc_CF2CF2 <- concentration_forAnalytes_homolog(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx",
+                                                              filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
                                                               homolog_pattern_SMILES = "F[C+](F)[C+](F)F",
                                                               findHomolog_onlyForAnalytes = FALSE) 
 
 
-data_homolog_conc_CF2CF2_intercept <- concentration_forAnalytes_homolog_withIntercept(filename_data = "data/Batch 1 Semi Quant w frag.xlsx",
-                                                                                   filename_smiles = "data/Smiles_for_Target_PFAS_semicolon.csv",
+data_homolog_conc_CF2CF2_intercept <- concentration_forAnalytes_homolog_withIntercept(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx",
+                                                                                   filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
                                                                                    homolog_pattern_SMILES = "F[C+](F)[C+](F)F",
                                                                                    findHomolog_onlyForAnalytes = FALSE) 
 
 
 
 # ----------------------------------------
-# train model by leaving one out each time
+# Use LOO models and predict concentrations (using other 32 PFAS as calibrants)
 # ----------------------------------------
 
 # for CF2 compounds
 SMILES_list_homolog_CF2 <- homologs_CF2 %>%
   select(Compound, SMILES.x) %>%
+  rename(SMILES = SMILES.x) %>% 
   unique()
 
-# find all pfas models from LOO
-all_pfas_models_LOO <- read_delim("results/modelling_results/PFAS_pred_logIEs_with_leave_one_out_approach.csv")
 
-all_pfas_models_LOO <- all_pfas_models_LOO %>% 
-  filter(model_nr != "model_12")
+SMILES_names_with_homologues_CF2 = SMILES_list_homolog_CF2
+table_with_PFAS_LOO_pred_logIEs = read_delim("results/modelling_results/PFAS_pred_logIEs_with_leave_one_out_approach.csv")
+directory_with_LOO_models = "C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant/models/leave_one_out_approach"
+data_detected_PFAS = data_real_conc
 
-predicted_concentrations <- tibble()
+model_pred_CF2_homologues = concentration_forPFAS_pretrained_models(SMILES_names_with_homologues = SMILES_names_with_homologues_CF2,
+                                                                    table_with_PFAS_LOO_pred_logIEs = table_with_PFAS_LOO_pred_logIEs,
+                                                                    directory_with_LOO_models = directory_with_LOO_models,
+                                                                    data_detected_PFAS = data_detected_PFAS)
 
-for (i in 1:length(SMILES_list_homolog_CF2$Compound)) {
-  
-  model_to_read_in <- all_pfas_models_LOO %>% 
-    filter(grepl(SMILES_list_homolog_CF2[i,1], name, fixed = TRUE))
-  
-  model_here = readRDS(file = paste("models/leave_one_out_approach/", model_to_read_in$model_nr, sep=""))
-  
-  conc_forAll_compounds <- concentration_forAnalytes_model(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx", 
-                                                           filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv", 
-                                                           filename_eluent = "data_for_modelling/eluent.csv", 
-                                                           model_here,
-                                                           compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
-  
-  
-  conc_pred_forSuspect <- conc_forAll_compounds$data %>%
-    filter(grepl(SMILES_list_homolog_CF2[i,1], name, fixed = TRUE))
-  
-  predicted_concentrations <- predicted_concentrations %>%
-    bind_rows(conc_pred_forSuspect)
-}
 
 # for CF2CF2 compounds
 SMILES_list_homolog_CF2CF2 <- homologs_CF2CF2 %>%
   select(Compound, SMILES.x) %>%
+  rename(SMILES = SMILES.x) %>% 
   unique()
 
-predicted_concentrations_CF2CF2 <- tibble()
+SMILES_names_with_homologues_CF2CF2 = SMILES_list_homolog_CF2CF2
 
-for (i in 19:length(SMILES_list_homolog_CF2CF2$SMILES.x)) {
-  data_forTraining <- data_clean %>%
-    filter(!grepl(SMILES_list_homolog_CF2CF2[i,2], SMILES, fixed = TRUE))
-  
-  logIE_pred_model_new = training_logIE_pred_model(data = data_forTraining)
-  
-  conc_forAll_compounds <- concentration_forAnalytes_model(filename_data = "data/Batch 1 Semi Quant w frag.xlsx", 
-                                                           filename_smiles = "data/Smiles_for_Target_PFAS_semicolon.csv", 
-                                                           filename_eluent = "data/eluent.csv", 
-                                                           logIE_pred_model_new,
-                                                           compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
-  
-  
-  conc_pred_forSuspect <- conc_forAll_compounds$data %>%
-    filter(grepl(SMILES_list_homolog_CF2CF2[i,2], SMILES, fixed = TRUE))
-  
-  predicted_concentrations_CF2CF2 <- predicted_concentrations_CF2CF2 %>%
-    bind_rows(conc_pred_forSuspect)
-}
-
-
+model_pred_CF2CF2_homologues = concentration_forPFAS_pretrained_models(SMILES_names_with_homologues = SMILES_names_with_homologues_CF2CF2,
+                                                                       table_with_PFAS_LOO_pred_logIEs = table_with_PFAS_LOO_pred_logIEs,
+                                                                       directory_with_LOO_models = directory_with_LOO_models,
+                                                                       data_detected_PFAS = data_detected_PFAS)
 
 
 
@@ -182,69 +150,57 @@ for (i in 19:length(SMILES_list_homolog_CF2CF2$SMILES.x)) {
 #                      conc_homolog = conc))
 
 #CF2
-summary_table_CF2  <- data_real_conc %>%
-  left_join(predicted_concentrations %>%
-              select(slope_pred, conc_pred, Compound, Filename, Area, SMILES), 
-            by = c("Compound", "Filename", "Area", "SMILES")) %>%
+summary_table_CF2  <- model_pred_CF2_homologues$predicted_conc %>%
   left_join(data_homolog_conc_CF2 %>%
               rename(Compound = Compound.y,
                      SMILES = SMILES.y,
                      Compound_homolog = Compound.x,
                      SMILES_homolog = SMILES.x,
                      slope_homolog = slope,
-                     conc_homolog = conc)) %>%
+                     conc_homolog_uM = conc)) %>%
   left_join(data_homolog_conc_CF2_intercept %>%
               rename(Compound = Compound.y,
                      SMILES = SMILES.y,
                      Compound_homolog = Compound.x,
                      SMILES_homolog = SMILES.x,
                      slope_homolog = slope,
-                     conc_homolog_withIntercept = conc,
+                     conc_homolog_withIntercept_uM = conc,
                      intercept_homolog = intercept))
 
 
 
-summary_table_CF2_filtered <- summary_table_CF2 %>%
-  filter(!is.na(Compound_homolog))
 
-write.csv2(summary_table_CF2_filtered, "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/Topics_exp_codes/Lara_PFAS/Melanie/summary_table_CF2_withintercept_filtered.csv")
+# write_delim(summary_table_CF2, "results/homologue_vs_IEmodel_results/summary_table_CF2_concentrations.csv")
 
 #CF2CF2
-summary_table_CF2CF2  <- data_real_conc %>%
-  left_join(predicted_concentrations_CF2CF2 %>%
-              select(slope_pred, conc_pred, Compound, Filename, Area, SMILES), 
-            by = c("Compound", "Filename", "Area", "SMILES")) %>%
+summary_table_CF2CF2  <- model_pred_CF2CF2_homologues$predicted_conc %>%
   left_join(data_homolog_conc_CF2CF2 %>%
               rename(Compound = Compound.y,
                      SMILES = SMILES.y,
                      Compound_homolog = Compound.x,
                      SMILES_homolog = SMILES.x,
                      slope_homolog = slope,
-                     conc_homolog = conc)) %>%
+                     conc_homolog_uM = conc)) %>%
   left_join(data_homolog_conc_CF2CF2_intercept %>%
               rename(Compound = Compound.y,
                      SMILES = SMILES.y,
                      Compound_homolog = Compound.x,
                      SMILES_homolog = SMILES.x,
                      slope_homolog = slope,
-                     conc_homolog_withIntercept = conc,
+                     conc_homolog_withIntercept_uM = conc,
                      intercept_homolog = intercept))
 
 
-summary_table_CF2CF2_filtered <- summary_table_CF2CF2 %>%
-  filter(!is.na(Compound_homolog))
 
-write.csv2(summary_table_CF2CF2_filtered, "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/Topics_exp_codes/Lara_PFAS/Melanie/summary_table_CF2CF2_filtered.csv")
+#write_delim(summary_table_CF2CF2, "results/homologue_vs_IEmodel_results/summary_table_CF2CF2_concentrations.csv")
 
-summary_table_CF2CF2 <- read.csv2("C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/Topics_exp_codes/Lara_PFAS/Melanie/summary_table_CF2CF2_filtered.csv")
 
-#summary_table_CF2_filtered <- summary_table_CF2CF2
 
 # plots
 
-IE_c_plot = ggplot(data = summary_table_CF2_filtered)+
+IE_c_plot = ggplot(data = summary_table_CF2CF2)+
   geom_point(mapping = aes(x = Theoretical_conc_uM,
-                           y = conc_pred,
+                           y = conc_pred_uM,
                            color = Compound)) +
   scale_y_log10(limits = c(10^-5, 10^0)) +
   scale_x_log10(limits = c(10^-5, 10^0)) +
@@ -253,9 +209,9 @@ IE_c_plot = ggplot(data = summary_table_CF2_filtered)+
   geom_abline(slope = 1, intercept = -1) +
   theme(aspect.ratio = 1)
 
-homolog_c_plot = ggplot(data = summary_table_CF2_filtered)+
+homolog_c_plot = ggplot(data = summary_table_CF2CF2)+
   geom_point(mapping = aes(x = Theoretical_conc_uM,
-                           y = conc_homolog,
+                           y = conc_homolog_uM,
                            color = Compound,
                            text = Compound_homolog)) +
   scale_y_log10(limits = c(10^-5, 10^0)) +

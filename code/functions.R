@@ -81,7 +81,82 @@ viscosity <- function(organic,organic_modifier){
   return(viscosity)
 }
 
-linear_regression <- function(y, x) {
+#linear regression with leave out from high conc
+linear_regression <- function(y, x, remove_lowest_conc = TRUE) {
+  # if multiple replicas with same concentrations - average
+  df <- tibble(x = x,
+               y = y) %>%
+    group_by(x) %>%
+    mutate(y = mean(y)) %>%
+    ungroup() %>%
+    unique() %>%
+    na.omit()
+
+  y = df$y
+  x = df$x
+
+  plot_slopes_list = list()
+
+  if(length(x) == 0){
+    slope = NA
+    intercept = NA
+    regression_parameters <- list("slope" = slope, "intercept" = intercept)
+    warning("No data for linear regression")
+    return(regression_parameters)
+  } else if (length(y) > 5) {
+    #remove the lowest concentration?
+    if(remove_lowest_conc) {
+    y = y[2:(length(y))]
+    x = x[2:(length(x))]
+    }
+    
+    
+    for (i in length(y):5){
+      lm_summary = summary(lm(y ~ x, weights = 1/x))
+      slope = lm_summary$coefficients[2]
+      intercept = lm_summary$coefficients[1]
+      residuals = (y - (slope*x +intercept))/y*100
+
+      plot_here = ggplot() +
+        geom_point(mapping = aes(x = df$x,
+                                 y = df$y)) +
+        geom_abline(slope = slope, intercept = intercept) +
+        theme_bw() +
+        labs(x = "conc_uM",
+             y = "area") 
+      plot_slopes_list[[i]] = plot_here
+
+      if (max(abs(residuals)) < 20) {
+        break
+      }
+      y = y[1:(length(y)-1)]
+      x = x[1:(length(x)-1)]
+    }
+    if (max(abs(residuals)) > 20) {
+      warning(paste0("Check linearity of calibration graph. Max abs relative residual: ", max(abs(residuals))))
+    }
+    
+    return(list("slope" = slope,
+                "intercept" = intercept,
+                "plots" = plot_slopes_list,
+                "resid" = residuals))
+  } else {
+    lm_summary = summary(lm(y ~ x))
+    slope = lm_summary$coefficients[2]
+    intercept = lm_summary$coefficients[1]
+    residuals = (y - (slope*x +intercept))/y*100
+    if (max(abs(residuals)) > 20) {
+      warning(paste0("Check linearity of calibration graph. Max abs relative residual: ", max(abs(residuals))))
+    }
+    regression_parameters <- list("slope" = slope, 
+                                  "intercept" = intercept,
+                                  "resid" = residuals)
+    return(regression_parameters)
+  }
+}
+
+
+old_linear_regression <- function(y, x) {
   df <- tibble(x = x, #log(x),
                y = y, #log(y)
   ) %>%
@@ -99,16 +174,16 @@ linear_regression <- function(y, x) {
     return(regression_parameters)
   } else if (length(y) > 5) {
     for (i in length(y):5){
-      y = y[2:(length(y))]
-      x = x[2:(length(x))]
       slope = summary(lm(y ~ x))$coefficients[2]
       intercept = summary(lm(y ~ x))$coefficients[1]
       residuals = (y - (slope*x +intercept))/y*100
       regression_parameters <- list("slope" = slope, "intercept" = intercept)
-      if (max(abs(residuals)) < 10) {
+      if (max(abs(residuals)) < 20) {
         return(regression_parameters)
         break
       }
+      y = y[1:(length(y)-1)]
+      x = x[1:(length(x)-1)]
     }
     return(regression_parameters)
   } else {
@@ -450,11 +525,12 @@ training_logIE_pred_model = function(data,
   metrics = list("RMSE_training_set" = RMSE_training_set)
 
   if (!is.null(save_model_name)) {
-    saveRDS(model,save_model_name)
+    saveRDS(model,paste0(save_model_name,".RData", sep =""))
   }
 
-  if (!is.null(split) & (split != 1)) {
-    test_set <- test_set %>%
+  if (!is.null(split)) {
+    if(split != 1) {
+      test_set <- test_set %>%
       mutate(logIE_predicted = predict(model, newdata = test_set))
     RMSE_test_set = rmse(test_set$logIE, test_set$logIE_predicted)
 
@@ -462,6 +538,7 @@ training_logIE_pred_model = function(data,
                 "test_set" = test_set)
     metrics = list("RMSE_training_set" = RMSE_training_set,
                    "RMSE_test_set" = RMSE_test_set)
+    }
   }
 
   model = list("model" = model,
@@ -939,7 +1016,59 @@ concentration_forAnalytes_model_cal_separateFile <- function(cal_filename_data,
   return(data_predicted)
 }
 
-
+#read in data with PaDEL and eluent decriptors
+#directory with all trained models and file with compound names and model names
+concentration_forPFAS_pretrained_models <- function(SMILES_names_with_homologues,
+                                                    table_with_PFAS_LOO_pred_logIEs,
+                                                    data_detected_PFAS,
+                                                    directory_with_LOO_models) {
+  
+  
+  predicted_concentrations = tibble()
+  list_of_calibration_plots = list()
+  
+  for(i in 1:length(SMILES_names_with_homologues$SMILES)) {
+    #find model where it is left out
+    table_here = table_with_PFAS_LOO_pred_logIEs %>% 
+      filter(name == SMILES_names_with_homologues[i,1][[1]])
+    model_here = readRDS(paste0(directory_with_LOO_models,"/", table_here$model_nr, ".RData", sep = ""))
+    
+    # use this model for pred logIE for all PFAS
+    predictions_here = table_with_PFAS_LOO_pred_logIEs 
+    predictions_here = predictions_here %>% 
+      mutate(logIE_predicted_LOO = predict(model_here, newdata = predictions_here)) %>% 
+      select(logIE_predicted_LOO, everything())
+    
+    #use all other PFAS as calibrants
+    linMod <- lm(log10(slope) ~ logIE_predicted_LOO, data = predictions_here %>% 
+                   filter(name != SMILES_names_with_homologues[i,1][[1]]))
+    
+    plot_predictedIE_slope = ggplot() +
+      geom_point(data = predictions_here,
+                 mapping = aes(logIE_predicted_LOO, log10(slope)),
+                 color = "black",
+                 alpha = 0.5,
+                 size = 3) +
+      geom_abline(slope = summary(linMod)$coefficients[2], intercept = summary(linMod)$coefficients[1])
+    list_of_calibration_plots[[i]] = plot_predictedIE_slope
+    
+   
+     # Find RF values from predicted IE to the LOO PFAS
+  PFAS_concentration <- data_detected_PFAS %>% 
+    left_join(predictions_here %>% 
+                select(logIE_predicted_LOO, logIE_predicted, logIE, SMILES, model_nr, slope, name)) %>%
+    filter(name == SMILES_names_with_homologues[i,1][[1]]) %>%
+    mutate(slope_pred = 10^(summary(linMod)$coefficients[2]*logIE_predicted_LOO + summary(linMod)$coefficients[1])) %>%
+    mutate(conc_pred_uM = area_IC/slope_pred) %>%
+    mutate(conc_pred_pg_uL = conc_pred_uM*Molecular_weight)
+  
+  predicted_concentrations = predicted_concentrations %>% 
+    bind_rows(PFAS_concentration)
+  }
+  
+  return(list("predicted_conc" = predicted_concentrations,
+              "model_calibration_plots" = list_of_calibration_plots))
+}
 
 
 
