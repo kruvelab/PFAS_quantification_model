@@ -198,3 +198,14 @@ logIE_pred_model_test_error_pfas <- logIE_pred_model_train_test$data$test_set %>
 
 mean(logIE_pred_model_test_error_pfas$pred_error)
 
+
+
+
+
+
+
+
+
+
+
+

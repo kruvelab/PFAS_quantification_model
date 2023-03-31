@@ -383,11 +383,23 @@ barplot <- ggplot(data = data_short, aes( x = factor( unique_compound ), y = ((P
 
 
 
+#################
+# concentrations
+
+SMILES_names_targets = data %>% 
+  select(Compound, SMILES) %>% 
+  unique()
+
+
+model_pred_targets = concentration_forPFAS_pretrained_models(SMILES_names_with_homologues = SMILES_names_targets,
+                                                             table_with_PFAS_LOO_pred_logIEs = table_with_PFAS_LOO_pred_logIEs,
+                                                             directory_with_LOO_models = directory_with_LOO_models,
+                                                             data_detected_PFAS = data_detected_PFAS)
 
 
 
-
-
+model_pred_targets_data = model_pred_targets$predicted_conc
+write_delim(model_pred_targets_data, "results/modelling_results/targets_qc_model_concentrations_with_LOO.csv", delim = ";")
 
 
 

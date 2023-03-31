@@ -30,7 +30,7 @@ highlighter_color <- "#ee6c4d"
   
 extrafont::loadfonts(device = "win")
 #font <- extrafont::choose_font("Khula")
-font <- extrafont::choose_font("Quicksand")
+font <- extrafont::choose_font("Arial")
 fontsize <- 12
 
         
@@ -347,4 +347,5 @@ joined_plot2 <- plot_grid(quant_homologue_CF2, quant_model_LOO_CF2)
 summary_table_CF2CF2 <- read_delim("results/homologue_vs_IEmodel_results/homolgoue_series_conc_summaries/summary_table_CF2CF2_filtered.csv")
 
 #---- plot: Fluorine mass balance (TF, EOF, PFAS (target + semi-quant)) ----
+
 
