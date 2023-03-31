@@ -397,7 +397,6 @@ model_pred_targets = concentration_forPFAS_pretrained_models(SMILES_names_with_h
                                                              data_detected_PFAS = data_detected_PFAS)
 
 
-
 model_pred_targets_data = model_pred_targets$predicted_conc
 write_delim(model_pred_targets_data, "results/modelling_results/targets_qc_model_concentrations_with_LOO.csv", delim = ";")
 
