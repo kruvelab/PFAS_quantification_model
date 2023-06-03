@@ -25,7 +25,7 @@ library(gridExtra)
 library(patchwork)
 library(lsa)
 
-#specyfy your working directory here:
+#specify your working directory here:
 admin = "C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant"
 setwd(admin)
 
@@ -150,6 +150,8 @@ IE_slope_cor = ggplot() +
 IE_slope_cor
 # ggsave(IE_slope_cor,  filename = "results/modelling_results/230331_model_PFAS_train_test_logIE.png", width=16, height=8, units = "cm", device = NULL)
 # ggsave(IE_slope_cor, filename = "results/modelling_results/230331_model_PFAS_train_test_logIE.svg", width=16, height=8, units = "cm")
+#ggsave(IE_slope_cor,  filename = "C:/Users/HelenSepman/OneDrive - Kruvelab/Helen_phd/presentations/figures/230411_presentation_nonpfas_test.png", width=8, height=8, units = "cm", device = NULL)
+
 
 ggplotly(IE_slope_cor)
 
@@ -205,8 +207,8 @@ IE_slope_cor_model_without_PFAS = ggplot() +
   my_theme
 
 IE_slope_cor_model_without_PFAS
-# ggsave(IE_slope_cor_model_without_PFAS,  filename = "results/modelling_results/230331_logIE_PFAS_with_model_withoutPFAS.png", width=8, height=8, units = "cm", device = NULL)
-# ggsave(IE_slope_cor_model_without_PFAS, filename = "results/modelling_results/230331_logIE_PFAS_with_model_withoutPFAS.svg", width=8, height=8, units = "cm")
+# ggsave(IE_slope_cor_model_without_PFAS,  filename = "results/modelling_results/230411_logIE_PFAS_with_model_withoutPFAS.png", width=8, height=8, units = "cm", device = NULL)
+# ggsave(IE_slope_cor_model_without_PFAS, filename = "results/modelling_results/230411_logIE_PFAS_with_model_withoutPFAS.svg", width=8, height=8, units = "cm")
 
 ggplotly(IE_slope_cor_model_without_PFAS)
 
@@ -257,8 +259,8 @@ IE_slope_cor_model_LOO_PFAS = ggplot() +
   my_theme
 
 IE_slope_cor_model_LOO_PFAS
-# ggsave(IE_slope_cor_model_LOO_PFAS,  filename = "results/modelling_results/230331_logIE_PFAS_leaveOneOut.png", width=8, height=8, units = "cm", device = NULL)
-# ggsave(IE_slope_cor_model_LOO_PFAS, filename = "results/modelling_results/230331_logIE_PFAS_leaveOneOut.svg", width=8, height=8, units = "cm")
+# ggsave(IE_slope_cor_model_LOO_PFAS,  filename = "results/modelling_results/230411_logIE_PFAS_leaveOneOut.png", width=8, height=8, units = "cm", device = NULL)
+# ggsave(IE_slope_cor_model_LOO_PFAS, filename = "results/modelling_results/230411_logIE_PFAS_leaveOneOut.svg", width=8, height=8, units = "cm")
 
 ggplotly(IE_slope_cor_model_LOO_PFAS)
 
@@ -412,6 +414,7 @@ SMILES_all = PaDEL_original(SMILES_all)
 SMILES_all = SMILES_all %>% 
   select(Compound, SMILES, type, descriptors)
 
+
 #Remove zero variance columns as otherwise cannot scale the data and do PCA
 SMILES_all= SMILES_all %>% 
   select(Compound, SMILES, type) %>% 
@@ -439,7 +442,7 @@ plot_pc1_pc2 = ggplot() +
              data = scores_pca,
              size = 2,
              alpha = 0.75) + 
-  scale_color_manual(values=c("#ee6c4d", "#274c77"))+
+  scale_color_manual(values=c("#274c77", "#ee6c4d"))+
   labs(x = "PC1 (17.0%)", y = "PC2 (15.8%)") +
   my_theme +
   theme(legend.position = "right")
@@ -455,7 +458,7 @@ plot_pc1_pc3 = ggplot() +
              data = scores_pca,
              size = 2,
              alpha = 0.75) + 
-  scale_color_manual(values=c("#ee6c4d", "#274c77"))+
+  scale_color_manual(values=c("#274c77", "#ee6c4d"))+
 labs(x = "PC1 (17.0%)", y = "PC3 (11.8%)") +
   my_theme +
   theme(legend.position = "right")
@@ -466,8 +469,8 @@ plot_pc1_pc3
 joined_plot3 = plot_pc1_pc2 + plot_pc1_pc3
 joined_plot3[[1]] = joined_plot3[[1]] + theme(legend.position = "none")
 
-# ggsave(joined_plot3,  filename = "results/Melanie_new_suspects/230331_PCA_targets_suspects.png", width=18, height=10, units = "cm", device = NULL)
-# ggsave(joined_plot3, filename = "results/Melanie_new_suspects/230331_PCA_targets_suspects.svg", width=18, height=10, units = "cm")
+# ggsave(joined_plot3,  filename = "results/Melanie_new_suspects/230411_PCA_targets_suspects.png", width=18, height=10, units = "cm", device = NULL)
+# ggsave(joined_plot3, filename = "results/Melanie_new_suspects/230411_PCA_targets_suspects.svg", width=18, height=10, units = "cm")
 
 
 
@@ -502,4 +505,21 @@ joined_plot3[[1]] = joined_plot3[[1]] + theme(legend.position = "none")
 # similarity_scores = cosine(as.matrix(SMILES_all_similarity))
 # 
 
+
+#---- t-SNE of Targets and suspects based on PaDEL decriptors that ended up in the model after cleaning the descriptors ----
+
+# load your omic data here as mydata
+install.packages("tsne")
+trn <- data.matrix(SMILES_all[-c(1,2,3)])
+
+library(tsne)
+
+cols <- rainbow(10)
+
+# this is the epoch callback function used by tsne. 
+# x is an NxK table where N is the number of data rows passed to tsne, and K is the dimension of the map. 
+# Here, K is 2, since we use tsne to map the rows to a 2D representation (map).
+ecb = function(x, y){ plot(x, t='n'); text(x, labels=trn[,65], col=cols[trn[,65] +1]); }
+
+tsne_res = tsne(trn[,1:64], epoch_callback = ecb, perplexity=50, epoch=50)
 

@@ -155,7 +155,7 @@ for (i in 1:length(SMILES_list_PFAS$SMILES)) {
 # ---- Calculating additional model evaluation parameters ----
 # ------------------------------------------------------------
 
-#logIE_pred_model_train_test <- readRDS(file="models/230220_logIE_model_withPFAS_train_test.RData")
+#logIE_pred_model_train_test <- readRDS(file="models/230329_logIE_model_withPFAS_train_test.RData")
 
 #only PFAS
 data_for_error_calc_train = logIE_pred_model_train_test$data$training_set %>%
@@ -169,7 +169,7 @@ rmse_test <- rmse(data_for_error_calc_test$logIE, data_for_error_calc_test$logIE
 
   
 # mean error
-logIE_pred_model_train_test_error <- logIE_pred_model_train_test$data$test_set %>%
+logIE_pred_model_train_test_error <- logIE_pred_model_train_test$data$test_set %>% #PFAS_LOO_data %>%  
   #filter(data_type == "PFAS") %>% 
   mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
                                 TRUE ~ 10^logIE_predicted/10^logIE)) %>%

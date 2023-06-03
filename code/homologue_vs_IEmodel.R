@@ -9,6 +9,8 @@
 # train model by leaving one out each time
 # Comparison in table
 
+admin = "C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant"
+setwd(admin)
 
 # Find homolog series compounds
 data = Orbitrap_dataset_raw %>%
@@ -196,87 +198,96 @@ summary_table_CF2CF2  <- model_pred_CF2CF2_homologues$predicted_conc %>%
 
 
 
-# plots
+# # plots
+# 
+# IE_c_plot = ggplot(data = summary_table_CF2CF2)+
+#   geom_point(mapping = aes(x = Theoretical_conc_uM,
+#                            y = conc_pred_uM,
+#                            color = Compound)) +
+#   scale_y_log10(limits = c(10^-5, 10^0)) +
+#   scale_x_log10(limits = c(10^-5, 10^0)) +
+#   geom_abline(slope = 1, intercept = 0) +
+#   geom_abline(slope = 1, intercept = 1) +
+#   geom_abline(slope = 1, intercept = -1) +
+#   theme(aspect.ratio = 1)
+# 
+# homolog_c_plot = ggplot(data = summary_table_CF2CF2)+
+#   geom_point(mapping = aes(x = Theoretical_conc_uM,
+#                            y = conc_homolog_uM,
+#                            color = Compound,
+#                            text = Compound_homolog)) +
+#   scale_y_log10(limits = c(10^-5, 10^0)) +
+#   scale_x_log10(limits = c(10^-5, 10^0)) +
+#   geom_abline(slope = 1, intercept = 0) +
+#   geom_abline(slope = 1, intercept = 1) +
+#   geom_abline(slope = 1, intercept = -1) +
+#   geom_abline(slope = 1, intercept = 1) + 
+#   theme(aspect.ratio = 1)#,
+# #legend.position = "none")
+# ggplotly(homolog_c_plot)
+# 
+# 
+# plot_comp <- plot_grid(IE_c_plot, homolog_c_plot)
+# 
+# plot_comp
+# 
+# # Checking cal graphs and intercepts differences
+# 
+# cal_graph = ggplot(data = summary_table_CF2_filtered %>%
+#                      filter(Compound == "PFNA"))+
+#   geom_point(mapping = aes(x = Theoretical_conc_uM,
+#                            y = Area)) +
+#   geom_abline(slope = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[2],
+#               intercept = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[1])+
+#   geom_abline(slope = summary_table_CF2_filtered$slope_homolog, intercept = summary_table_CF2_filtered$intercept) +
+#   theme(aspect.ratio = 1)
+# cal_graph
+# 
+# 
+# 
+# data_forCal <- data_real_conc %>%
+#   filter(Compound == "PFNA")
+# 
+# data_homolog_quant <- data_real_conc %>%
+#   filter(Compound == "PFDA")
+# 
+# cal_graph = ggplot(data = data_forCal)+
+#   geom_point(mapping = aes(x = Theoretical_conc_uM,
+#                            y = area_IC)) +
+#   # geom_abline(slope = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[2],
+#   #             intercept = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[1])+
+#   geom_abline(slope = data_forCal$slope, intercept = data_forCal$intercept) +
+#   geom_abline(slope = data_homolog_quant$slope, intercept = data_homolog_quant$intercept, colour='#E41A1C') +
+#   theme(aspect.ratio = 1)
+# cal_graph
+# print(data_forCal$slope[1])
+# print(data_forCal$intercept[1])
+# 
 
-IE_c_plot = ggplot(data = summary_table_CF2CF2)+
-  geom_point(mapping = aes(x = Theoretical_conc_uM,
-                           y = conc_pred_uM,
-                           color = Compound)) +
-  scale_y_log10(limits = c(10^-5, 10^0)) +
-  scale_x_log10(limits = c(10^-5, 10^0)) +
-  geom_abline(slope = 1, intercept = 0) +
-  geom_abline(slope = 1, intercept = 1) +
-  geom_abline(slope = 1, intercept = -1) +
-  theme(aspect.ratio = 1)
 
-homolog_c_plot = ggplot(data = summary_table_CF2CF2)+
-  geom_point(mapping = aes(x = Theoretical_conc_uM,
-                           y = conc_homolog_uM,
-                           color = Compound,
-                           text = Compound_homolog)) +
-  scale_y_log10(limits = c(10^-5, 10^0)) +
-  scale_x_log10(limits = c(10^-5, 10^0)) +
-  geom_abline(slope = 1, intercept = 0) +
-  geom_abline(slope = 1, intercept = 1) +
-  geom_abline(slope = 1, intercept = -1) +
-  geom_abline(slope = 1, intercept = 1) + 
-  theme(aspect.ratio = 1)#,
-#legend.position = "none")
-ggplotly(homolog_c_plot)
-
-
-plot_comp <- plot_grid(IE_c_plot, homolog_c_plot)
-
-plot_comp
-
-# Checking cal graphs and intercepts differences
-
-cal_graph = ggplot(data = summary_table_CF2_filtered %>%
-                     filter(Compound == "PFNA"))+
-  geom_point(mapping = aes(x = Theoretical_conc_uM,
-                           y = Area)) +
-  geom_abline(slope = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[2],
-              intercept = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[1])+
-  geom_abline(slope = summary_table_CF2_filtered$slope_homolog, intercept = summary_table_CF2_filtered$intercept) +
-  theme(aspect.ratio = 1)
-cal_graph
-
-
-
-data_forCal <- data_real_conc %>%
-  filter(Compound == "PFNA")
-
-data_homolog_quant <- data_real_conc %>%
-  filter(Compound == "PFDA")
-
-cal_graph = ggplot(data = data_forCal)+
-  geom_point(mapping = aes(x = Theoretical_conc_uM,
-                           y = area_IC)) +
-  # geom_abline(slope = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[2],
-  #             intercept = summary(lm(summary_table_CF2_filtered$Area ~ summary_table_CF2_filtered$Theoretical_conc_uM))$coefficients[1])+
-  geom_abline(slope = data_forCal$slope, intercept = data_forCal$intercept) +
-  geom_abline(slope = data_homolog_quant$slope, intercept = data_homolog_quant$intercept, colour='#E41A1C') +
-  theme(aspect.ratio = 1)
-cal_graph
-print(data_forCal$slope[1])
-print(data_forCal$intercept[1])
-
+summary_table_CF2 <- read_delim("results/homologue_vs_IEmodel_results/summary_table_CF2_concentrations.csv")
 
 
 # Error calculations
-summary_table_CF2_filtered = summary_table_CF2_filtered %>%
+summary_table_CF2_filtered = summary_table_CF2 %>%
   mutate(error_IE = case_when(
-    Theoretical_conc_uM > conc_pred ~ Theoretical_conc_uM/conc_pred,
-    TRUE ~ conc_pred/Theoretical_conc_uM),
+    Theoretical_conc_uM > conc_pred_uM ~ Theoretical_conc_uM/conc_pred_uM,
+    TRUE ~ conc_pred_uM/Theoretical_conc_uM),
     error_homolog = case_when(
-      Theoretical_conc_uM > conc_homolog ~ Theoretical_conc_uM/conc_homolog,
-      TRUE ~ conc_homolog/Theoretical_conc_uM),)
+      Theoretical_conc_uM > conc_homolog_uM ~ Theoretical_conc_uM/conc_homolog_uM,
+      TRUE ~ conc_homolog_uM/Theoretical_conc_uM),)
+
 
 summary_table_CF2_filtered %>%
   na.omit() %>%
   group_by(pattern) %>%
-  summarize(error_IE = mean(error_IE),
-            error_homolog = mean(error_homolog)) %>%
+  summarize(error_IE_mean = mean(error_IE),
+            #error_IE_geommean = exp(mean(log(error_IE))),
+            #error_IE_median = median(error_IE),
+            error_homolog_mean = mean(error_homolog),
+            #error_homolog_geommean = exp(mean(log(error_homolog))),
+            #error_homolog_median = median(error_homolog)
+            ) %>%
   ungroup()
 
 
