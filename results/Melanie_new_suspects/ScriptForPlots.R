@@ -29,12 +29,14 @@ plot_QC <- ggplot(QCs, aes(fill=Type, y=fct_inorder(Compounds), x=Value))+
   theme_classic()
 
 plot_QC
+# ggsave(plot_QC, filename = "results/homologue_vs_IEmodel_results/230331_conc_homolog_vs_model.svg", width=16, height=8, units = "cm")
+
 
 #Fluorine mass balance plot-----------------------------------------------------
 
 
-fmb_EOF <-read_excel("310523_DataForFigures.xlsx",sheet = "Sheet1")
-fmb_PFAS <-read_excel("310523_DataForFigures.xlsx",sheet = "Sheet2")
+fmb_EOF <-read_excel("results/Melanie_new_suspects/310523_DataForFigures.xlsx",sheet = "Sheet1")
+fmb_PFAS <-read_excel("results/Melanie_new_suspects/310523_DataForFigures.xlsx",sheet = "Sheet2")
 #View(fmb_EOF)
 #View(fmb_PFAS)
 barwidth=0.3
@@ -75,6 +77,8 @@ plot_fmb <- ggplot()+
 
 
 plot_fmb
+
+# ggsave(plot_fmb, filename = "results/Melanie_new_suspects/fluorine_mass_balance.svg", width=16, height=14, units = "cm")
 
 
 

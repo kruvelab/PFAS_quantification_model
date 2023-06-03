@@ -24,6 +24,8 @@ library(grid)
 library(gridExtra)
 library(patchwork)
 library(lsa)
+library(readxl)
+
 
 #specify your working directory here:
 admin = "C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant"
@@ -89,7 +91,7 @@ my_theme <- theme(
   #define the ratio of x and y axis
   #PS! for scatter plots it needs to be 1!
   #for predicted - measured plots also adjust the ranges!
-  aspect.ratio = 1,
+  #aspect.ratio = 1,
   #adjust the position of the axis title
   axis.title.x = element_text(hjust = c(1), vjust = c(0)),
   axis.title.y = element_text(hjust = c(1), vjust = c(1))
@@ -377,6 +379,35 @@ joined_plot2 = joined_plot2 + plot_annotation(tag_levels = "A")
 # ggsave(joined_plot2, filename = "results/homologue_vs_IEmodel_results/230331_conc_homolog_vs_model.svg", width=16, height=8, units = "cm")
 
 summary_table_CF2CF2 <- read_delim("results/homologue_vs_IEmodel_results/homolgoue_series_conc_summaries/summary_table_CF2CF2_filtered.csv")
+
+#---- plot: QCs ----
+
+QCs_target <- read_excel("results/Melanie_new_suspects/310523_DataForFigures.xlsx",sheet = "QCs", skip = 1)
+QCs_target = QCs_target %>% 
+  gather(Filename, target_conc, -Compound)
+
+QCs_model = read_delim("results/modelling_results/targets_qc_model_concentrations_with_LOO_changing_names.csv")
+
+QCs_all = QCs_target %>% 
+  left_join(QCs_model) %>% 
+  mutate(difference =  conc_pred_pg_uL*2 - target_conc) %>% 
+  drop_na(difference)
+
+
+plot_QC <- ggplot(QCs_all, aes(fill=Filename, y=fct_inorder(Compound), x=difference))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values=c("#274c77", "#6096ba", "#a3cef1"))+
+  labs(y="", x="pg/µl")+
+  my_theme
+
+plot_QC
+
+ggsave(plot_QC, filename = "results/Melanie_new_suspects/QCs_target_vs_model_quant.svg", width=14, height=16, units = "cm")
+
+
+# Need to multiply model resutls with 2 due to dilution!
+
+
 
 #---- plot: Fluorine mass balance (TF, EOF, PFAS (target + semi-quant)) ----
 
