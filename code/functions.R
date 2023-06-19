@@ -388,7 +388,7 @@ anchoring = function(data_to_be_anchored,
 
   data_to_be_anchored = data_to_be_anchored %>%
     mutate(#logRIE = log(slope/Anchor_slope$slope),
-           logIE  = log(slope/Anchor_slope$slope) #logRIE
+           logIE  = log10(slope/Anchor_slope$slope) #logRIE
                     + old_training_data_IEPFOSvalue$logIE) %>%
     select(Compound, SMILES, logIE, pH.aq., polarity_index, viscosity, surface_tension, NH4)
 

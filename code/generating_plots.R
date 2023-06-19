@@ -24,10 +24,8 @@ library(grid)
 library(gridExtra)
 library(patchwork)
 library(lsa)
-library(readxl)
 
-
-#specify your working directory here:
+#specyfy your working directory here:
 admin = "C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant"
 setwd(admin)
 
@@ -91,7 +89,7 @@ my_theme <- theme(
   #define the ratio of x and y axis
   #PS! for scatter plots it needs to be 1!
   #for predicted - measured plots also adjust the ranges!
-  #aspect.ratio = 1,
+  aspect.ratio = 1,
   #adjust the position of the axis title
   axis.title.x = element_text(hjust = c(1), vjust = c(0)),
   axis.title.y = element_text(hjust = c(1), vjust = c(1))
@@ -156,6 +154,98 @@ IE_slope_cor
 
 
 ggplotly(IE_slope_cor)
+
+#---- plot: correlation plots separately: PFAS IE predictions with model without PFAS ----
+
+IE_slope_cor_withoutPFAS = ggplot() +
+  geom_point(data = logIE_pred_model_PFAS_allData$data$training_set %>% 
+               filter(data_type == "non-PFAS"),
+             mapping = aes(logIE, logIE_predicted),
+             color = "#274c77",
+             alpha = 0.7,
+             size = 2) +
+  geom_point(data = logIE_pred_model_PFAS_allData$data$test_set %>% 
+               filter(data_type == "non-PFAS"),
+             mapping = aes(logIE, logIE_predicted),
+             color = "#ee6c4d",
+             alpha = 0.7,
+             size = 2) +
+  geom_abline(intercept = -1, slope = 1) +
+  geom_abline(intercept = 1, slope = 1) +
+  geom_abline(intercept = 0, slope = 1) +
+  ylab(substitute(paste("log", italic("IE"))["predicted"]))  +
+  xlab(substitute(paste("log", italic("IE"))["measured"])) +
+  theme(plot.title = element_text(size = fontsize),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        panel.grid = element_blank(), 
+        axis.line.y = element_line(size = 1, color = basecolor),
+        axis.line.x = element_line(size = 1, color = basecolor),
+        #axis.ticks = element_line(color = basecolor),
+        axis.title.x = element_text(size=fontsize),
+        axis.title.y = element_text(size=fontsize),
+        aspect.ratio = 1,
+        axis.text = element_text(family = font,
+                                 size = fontsize,
+                                 color = basecolor),
+        legend.key = element_blank(),
+        strip.background = element_blank(),
+        text = element_text(family = font,
+                            size = fontsize,
+                            color = basecolor))+
+  #facet_wrap(~data_type) +
+  #annotation_logticks(colour = basecolor) +
+  scale_x_continuous(limits = c(-4, 5), breaks=c(-4, -2, 0, 2, 4))+
+  scale_y_continuous(limits = c(-4, 5), breaks=c(-4, -2, 0, 2, 4))+
+  # xlim(c(-4,5)) +
+  # ylim(c(-4,5)) +
+  my_theme
+
+
+IE_slope_cor_withPFAS = ggplot() +
+  geom_point(data = logIE_pred_model_PFAS_allData$data$training_set %>% 
+               filter(data_type == "PFAS"),
+             mapping = aes(logIE, logIE_predicted),
+             color = "#274c77",
+             alpha = 0.7,
+             size = 2) +
+  geom_point(data = logIE_pred_model_PFAS_allData$data$test_set %>% 
+               filter(data_type == "PFAS"),
+             mapping = aes(logIE, logIE_predicted),
+             color = "#ee6c4d",
+             alpha = 0.7,
+             size = 2) +
+  geom_abline(intercept = -1, slope = 1) +
+  geom_abline(intercept = 1, slope = 1) +
+  geom_abline(intercept = 0, slope = 1) +
+  ylab(substitute(paste("log", italic("IE"))["predicted"]))  +
+  xlab(substitute(paste("log", italic("IE"))["measured"])) +
+  theme(plot.title = element_text(size = fontsize),
+        plot.background = element_blank(),
+        panel.background = element_blank(),
+        panel.grid = element_blank(), 
+        axis.line.y = element_line(size = 1, color = basecolor),
+        axis.line.x = element_line(size = 1, color = basecolor),
+        #axis.ticks = element_line(color = basecolor),
+        axis.title.x = element_text(size=fontsize),
+        axis.title.y = element_text(size=fontsize),
+        aspect.ratio = 1,
+        axis.text = element_text(family = font,
+                                 size = fontsize,
+                                 color = basecolor),
+        legend.key = element_blank(),
+        strip.background = element_blank(),
+        text = element_text(family = font,
+                            size = fontsize,
+                            color = basecolor))+
+  #facet_wrap(~data_type) +
+  #annotation_logticks(colour = basecolor) +
+  scale_x_continuous(limits = c(-4, 5), breaks=c(-4, -2, 0, 2, 4))+
+  scale_y_continuous(limits = c(-4, 5), breaks=c(-4, -2, 0, 2, 4))+
+  # xlim(c(-4,5)) +
+  # ylim(c(-4,5)) +
+  my_theme
+
 
 #---- plot: correlation plot: PFAS IE predictions with model without PFAS ----
 setwd("C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant")
@@ -270,7 +360,7 @@ rmse(PFAS_LOO_data$logIE, PFAS_LOO_data$logIE_predicted)
 
 #---- plot: joined plot - Liigand model vs leave-one-out approach predicted logIE for PFAS ---- 
 #put plots together
-joined_plot1 = IE_slope_cor_model_without_PFAS + IE_slope_cor_model_LOO_PFAS
+joined_plot1 = IE_slope_cor_model_without_PFAS + IE_slope_cor_model_LOO_PFAS 
 
 #take off some axis
 joined_plot1[[2]] = joined_plot1[[2]] + theme(axis.text.y = element_blank(),
@@ -361,7 +451,7 @@ quant_model_LOO_CF2 = ggplot() +
 
 
 #put plots together
-joined_plot2 = quant_homologue_CF2 + quant_model_LOO_CF2
+joined_plot2 = quant_homologue_CF2 + quant_model_LOO_CF2 
 
 #take off some axis
 joined_plot2[[2]] = joined_plot2[[2]] + theme(axis.text.y = element_blank(),
@@ -380,33 +470,44 @@ joined_plot2 = joined_plot2 + plot_annotation(tag_levels = "A")
 
 summary_table_CF2CF2 <- read_delim("results/homologue_vs_IEmodel_results/homolgoue_series_conc_summaries/summary_table_CF2CF2_filtered.csv")
 
-#---- plot: QCs ----
+#---- plot: all previous combined ----
 
-QCs_target <- read_excel("results/Melanie_new_suspects/310523_DataForFigures.xlsx",sheet = "QCs", skip = 1)
-QCs_target = QCs_target %>% 
-  gather(Filename, target_conc, -Compound)
+joined_plot_all1 = (IE_slope_cor_withoutPFAS + IE_slope_cor_withPFAS)
+joined_plot_all2 = (IE_slope_cor_model_without_PFAS + IE_slope_cor_model_LOO_PFAS)
+joined_plot_all3 = (quant_homologue_CF2 + quant_model_LOO_CF2)
 
-QCs_model = read_delim("results/modelling_results/targets_qc_model_concentrations_with_LOO_changing_names.csv")
+#take off some axis
+joined_plot_all1[[2]] = joined_plot_all1[[2]] + theme(axis.text.y = element_blank(),
+                                              axis.ticks.y = element_blank(),
+                                              axis.title.y = element_blank() ) 
+joined_plot_all1[[1]] = joined_plot_all1[[1]] + theme(axis.ticks.x = element_blank(),
+                                              axis.title.x = element_blank() )
 
-QCs_all = QCs_target %>% 
-  left_join(QCs_model) %>% 
-  mutate(difference =  conc_pred_pg_uL*2 - target_conc) %>% 
-  drop_na(difference)
+joined_plot_all2[[2]] = joined_plot_all2[[2]] + theme(axis.text.y = element_blank(),
+                                                      axis.ticks.y = element_blank(),
+                                                      axis.title.y = element_blank() ) 
+joined_plot_all2[[1]] = joined_plot_all2[[1]] + theme(axis.ticks.x = element_blank(),
+                                                      axis.title.x = element_blank() )
+
+joined_plot_all3[[2]] = joined_plot_all3[[2]] + theme(axis.text.y = element_blank(),
+                                                      axis.ticks.y = element_blank(),
+                                                      axis.title.y = element_blank() ) 
+joined_plot_all3[[1]] = joined_plot_all3[[1]] + theme(axis.ticks.x = element_blank(),
+                                                      axis.title.x = element_blank() )
 
 
-plot_QC <- ggplot(QCs_all, aes(fill=Filename, y=fct_inorder(Compound), x=difference))+
-  geom_bar(stat = "identity", position = "dodge")+
-  scale_fill_manual(values=c("#274c77", "#6096ba", "#a3cef1"))+
-  labs(y="", x="pg/µl")+
-  my_theme
+joined_plot_all = (joined_plot_all1 + plot_layout(tag_level = "new"))/
+  (joined_plot_all2 + plot_layout(tag_level = "new"))/
+  (joined_plot_all3 + plot_layout(tag_level = "new"))  +  plot_annotation(tag_levels = c('A', '1')) +
+  theme(plot.tag = element_text(size = fontsize))
 
-plot_QC
+joined_plot_all = (joined_plot_all1)/
+  (joined_plot_all2)/
+  (joined_plot_all3)  +  plot_annotation(tag_levels = c('A')) +
+  theme(plot.tag = element_text(size = fontsize))
 
-ggsave(plot_QC, filename = "results/Melanie_new_suspects/QCs_target_vs_model_quant.svg", width=14, height=16, units = "cm")
-
-
-# Need to multiply model resutls with 2 due to dilution!
-
+# ggsave(joined_plot_all, filename = "results/modelling_results/230516_all_modelling_comparison.svg", width=16, height=24, units = "cm")
+# ggsave(joined_plot_all, filename = "results/modelling_results/230516_all_modelling_comparison.png", width=16, height=24, units = "cm")
 
 
 #---- plot: Fluorine mass balance (TF, EOF, PFAS (target + semi-quant)) ----
@@ -444,7 +545,6 @@ SMILES_all = PaDEL_original(SMILES_all)
 #select only the PaDEL descr that are in the model (also removed eluent descriptors here)
 SMILES_all = SMILES_all %>% 
   select(Compound, SMILES, type, descriptors)
-
 
 #Remove zero variance columns as otherwise cannot scale the data and do PCA
 SMILES_all= SMILES_all %>% 
@@ -536,21 +636,4 @@ joined_plot3[[1]] = joined_plot3[[1]] + theme(legend.position = "none")
 # similarity_scores = cosine(as.matrix(SMILES_all_similarity))
 # 
 
-
-#---- t-SNE of Targets and suspects based on PaDEL decriptors that ended up in the model after cleaning the descriptors ----
-
-# load your omic data here as mydata
-install.packages("tsne")
-trn <- data.matrix(SMILES_all[-c(1,2,3)])
-
-library(tsne)
-
-cols <- rainbow(10)
-
-# this is the epoch callback function used by tsne. 
-# x is an NxK table where N is the number of data rows passed to tsne, and K is the dimension of the map. 
-# Here, K is 2, since we use tsne to map the rows to a 2D representation (map).
-ecb = function(x, y){ plot(x, t='n'); text(x, labels=trn[,65], col=cols[trn[,65] +1]); }
-
-tsne_res = tsne(trn[,1:64], epoch_callback = ecb, perplexity=50, epoch=50)
 

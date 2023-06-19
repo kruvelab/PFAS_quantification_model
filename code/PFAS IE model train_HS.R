@@ -81,7 +81,7 @@ IE_slope_cor
 
 
 # Save model, data, metrics and varImp
-#saveRDS(logIE_pred_model_train_test, file="models/230329_logIE_model_withPFAS_train_test.RData")
+#saveRDS(logIE_pred_model_train_test, file="models/230619_logIE_model_withPFAS_train_test.RData")
 
 
 #-------------------------------------------
@@ -92,7 +92,7 @@ logIE_pred_model = training_logIE_pred_model(data = data_clean,
                                              split = NULL)
 
 logIE_pred_model$metrics
-#saveRDS(logIE_pred_model, file="models/230329_logIE_model_withPFAS_allData.RData")
+#saveRDS(logIE_pred_model, file="models/230619_logIE_model_withPFAS_allData.RData")
 
 
 # ----------------------------------------------
