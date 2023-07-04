@@ -12,7 +12,9 @@
 admin = "C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant"
 setwd(admin)
 
+#-------------------------------
 # Find homolog series compounds
+#-------------------------------
 data = Orbitrap_dataset_raw %>%
   left_join(SMILES_data) %>%
   drop_na(SMILES)
@@ -33,12 +35,22 @@ homologs <- SMILEs_match %>%
 
 homologs_CF2 <- homologs %>%
   filter(!is.na(pattern_CF2))
+# write_delim(homologs_CF2 %>%
+#               left_join(SMILES_forHomolog %>%
+#                           rename(compound_homolog = Compound,
+#                                  SMILES.y  = SMILES)), "results/homologue_vs_IEmodel_results/homologues_CF2.csv", delim = ",")
 
 homologs_CF2CF2 <- homologs %>%
   filter(!is.na(pattern_CF2CF2))
+# write_delim(homologs_CF2CF2%>%
+#               left_join(SMILES_forHomolog %>%
+#                           rename(compound_homolog = Compound,
+#                                  SMILES.y  = SMILES)), "results/homologue_vs_IEmodel_results/homologues_CF2CF2.csv", delim = ",")
 
 
-# save out actual concentrations
+#----------------------------------
+# save out real concentrations
+#----------------------------------
 
 Orbitrap_dataset_raw = read_excel_allsheets(filename = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx")
 
@@ -61,21 +73,17 @@ data_real_conc = Orbitrap_dataset_raw %>%
   mutate(RT = as.numeric(RT),
          area_IC = Area*IC,
          Theoretical_conc_uM = Theoretical_amt/Molecular_weight) 
-#  %>%
-# group_by(SMILES, Compound) %>%
-# mutate(slope = linear_regression(area_IC, Theoretical_conc_uM)$slope,
-#        intercept = linear_regression(area_IC, Theoretical_conc_uM)$intercept) %>%
-# ungroup()
 
 
 
-# find homolog series quantifications
+#-----------------------------------------------------
+# find concentrations using homologue response factor 
+#-----------------------------------------------------
 
 data_homolog_conc_CF2 <- concentration_forAnalytes_homolog(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx",
                                                            filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
                                                            homolog_pattern_SMILES = "F[C+2]F",
                                                            findHomolog_onlyForAnalytes = FALSE) 
-
 
 data_homolog_conc_CF2_intercept <- concentration_forAnalytes_homolog_withIntercept(filename_data = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx",
                                                                                    filename_smiles = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
@@ -172,7 +180,7 @@ summary_table_CF2  <- model_pred_CF2_homologues$predicted_conc %>%
 
 
 
-# write_delim(summary_table_CF2, "results/homologue_vs_IEmodel_results/summary_table_CF2_concentrations.csv")
+# write_delim(summary_table_CF2, "results/homologue_vs_IEmodel_results/230703_summary_table_CF2_concentrations.csv")
 
 #CF2CF2
 summary_table_CF2CF2  <- model_pred_CF2CF2_homologues$predicted_conc %>%
@@ -194,7 +202,7 @@ summary_table_CF2CF2  <- model_pred_CF2CF2_homologues$predicted_conc %>%
 
 
 
-#write_delim(summary_table_CF2CF2, "results/homologue_vs_IEmodel_results/summary_table_CF2CF2_concentrations.csv")
+#write_delim(summary_table_CF2CF2, "results/homologue_vs_IEmodel_results/230703_summary_table_CF2CF2_concentrations.csv")
 
 
 
@@ -265,7 +273,7 @@ summary_table_CF2CF2  <- model_pred_CF2CF2_homologues$predicted_conc %>%
 # 
 
 
-summary_table_CF2 <- read_delim("results/homologue_vs_IEmodel_results/summary_table_CF2_concentrations.csv")
+summary_table_CF2 <- read_delim("results/homologue_vs_IEmodel_results/230703_summary_table_CF2_concentrations.csv")
 
 
 # Error calculations
@@ -280,7 +288,7 @@ summary_table_CF2_filtered = summary_table_CF2 %>%
 
 summary_table_CF2_filtered %>%
   na.omit() %>%
-  group_by(pattern) %>%
+  #group_by(pattern) %>%
   summarize(error_IE_mean = mean(error_IE),
             #error_IE_geommean = exp(mean(log(error_IE))),
             #error_IE_median = median(error_IE),

@@ -22,7 +22,7 @@ cal_filename_data <-  paste0(admin,"/data_for_modelling/Batch 1 Semi Quant w fra
 cal_filename_smiles <- paste0(admin,"/data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv")
 sus_filename_data <- paste0(admin,"/results/Melanie_new_suspects/20210810_Melanie_Suspect _Screening_TF.xlsx")
 sus_filename_smiles <- paste0(admin,"/results/Melanie_new_suspects/suspects_smiles_melanie_updated_semicolon2.csv")
-logIE_pred_model <- readRDS(paste0(admin,"/models/230329_logIE_model_withPFAS_allData.Rdata"))
+logIE_pred_model <- readRDS(paste0(admin,"/models/230619_logIE_model_withPFAS_allData.Rdata"))
 
 
 melanie_concentrations_pred <- concentration_forAnalytes_model_cal_separateFile(cal_filename_data,
@@ -43,7 +43,7 @@ melanie_concentrations_pred_conc <- melanie_concentrations_pred_conc %>%
   select(-c(IC, Molecular_weight, area_IC)) %>%
   rename(Predicted_RF = slope_pred)
 
-write_delim(melanie_concentrations_pred_conc, paste0(admin,"/Melanie_new_suspects/230413_new_suspects_pred_conc.csv"), delim = ";")
+write_delim(melanie_concentrations_pred_conc, paste0(admin,"/Melanie_new_suspects/230704_new_suspects_pred_conc.csv"), delim = ";")
 
 
 
