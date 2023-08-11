@@ -40,7 +40,7 @@ highlighter_color <- "#ee6c4d"
   
 extrafont::loadfonts(device = "win")
 font <- extrafont::choose_font("Arial")
-fontsize <- 12
+fontsize <- 9
 
         
 #----theme----
@@ -73,8 +73,8 @@ my_theme <- theme(
   #or by coordinates. 
   #c(0, 0) corresponds to the "bottom left" 
   #and c(1, 1) corresponds to the "top right" position.
-  #legend.position = "none",
-  legend.position = c(0.75, 0.25),
+  legend.position = "none",
+  #legend.position = c(0.75, 0.25),
   #if you have a legend title and text you can specify font size here
   #here it indicates no legend title
   legend.title = element_blank(), 
@@ -567,6 +567,7 @@ joined_plot_all1 = (IE_slope_cor_withoutPFAS + IE_slope_cor_withPFAS)
 joined_plot_all2 = (IE_slope_cor_model_without_PFAS + IE_slope_cor_model_LOO_PFAS)
 joined_plot_all3 = (quant_homologue_CF2 + quant_model_LOO_CF2)
 
+# G1 + plot_spacer() + G2 + plot_layout(widths = c(4, -1.1 ,4.5),guides = "collect")& theme(legend.position = "top")
 #take off some axis
 joined_plot_all1[[2]] = joined_plot_all1[[2]] + theme(axis.text.y = element_blank(),
                                               axis.ticks.y = element_blank(),
@@ -599,6 +600,60 @@ joined_plot_all = (joined_plot_all1)/
 
 # ggsave(joined_plot_all, filename = "results/modelling_results/230703_all_modelling_comparison.svg", width=16, height=24, units = "cm")
 # ggsave(joined_plot_all, filename = "results/modelling_results/230703_all_modelling_comparison.png", width=16, height=24, units = "cm")
+
+#---- TEST plot: all previous combined ----
+
+joined_plot_all11 = (IE_slope_cor_withoutPFAS)
+joined_plot_all12 = (IE_slope_cor_withPFAS)
+joined_plot_all21 = (IE_slope_cor_model_without_PFAS)
+joined_plot_all22 = (IE_slope_cor_model_LOO_PFAS)
+joined_plot_all31 = (quant_homologue_CF2)
+joined_plot_all32 = (quant_model_LOO_CF2)
+
+#take off some axis
+joined_plot_all12 = joined_plot_all12 + theme(axis.ticks.y = element_blank(),
+                                                      axis.title.y = element_blank() ) 
+joined_plot_all11 = joined_plot_all11 + theme(axis.ticks.x = element_blank(),
+                                                      axis.title.x = element_blank(),
+                                                      axis.text.x = element_blank())
+
+joined_plot_all22 = joined_plot_all22 + theme(axis.ticks.y = element_blank(),
+                                                      axis.title.y = element_blank() ) 
+joined_plot_all21 = joined_plot_all21 + theme(axis.ticks.x = element_blank(),
+                                                      axis.title.x = element_blank(),
+                                                      axis.text.x = element_blank())
+
+joined_plot_all32 = joined_plot_all32 + theme(axis.ticks.y = element_blank(),
+                                                      axis.title.y = element_blank() ) 
+joined_plot_all31 = joined_plot_all31 + theme(axis.ticks.x = element_blank(),
+                                                      axis.title.x = element_blank(),
+                                                      axis.text.x = element_blank())
+
+
+
+design <- "AACCEE
+           AACCEE
+           BBDDFF
+           BBDDFF"
+
+
+joined_plot_all = joined_plot_all11 + joined_plot_all12 +
+  joined_plot_all21 + joined_plot_all22 +
+  joined_plot_all31 + joined_plot_all32 +
+  plot_layout(design = design) + plot_annotation(tag_levels = c('A'))
+  
+  (joined_plot_all1 + plot_layout(tag_level = "new"))/
+  (joined_plot_all2 + plot_layout(tag_level = "new", byrow = F))/
+  (joined_plot_all3 + plot_layout(tag_level = "new"))  +  plot_annotation(tag_levels = c('A', '1')) +
+  theme(plot.tag = element_text(size = fontsize))
+
+joined_plot_all = (joined_plot_all1) +
+  (joined_plot_all2) +
+  (joined_plot_all3)  +  plot_annotation(tag_levels = c('A')) +
+  theme(plot.tag = element_text(size = fontsize)) 
+# 
+# ggsave(joined_plot_all, filename = "results/modelling_results/230811_all_modelling_comparison.svg", width=18, height=10, units = "cm")
+# ggsave(joined_plot_all, filename = "results/modelling_results/230811_all_modelling_comparison.png", width=18, height=10, units = "cm")
 
 
 #---- plot: Fluorine mass balance (EOF vs quantified PFAS (target + suspect model quant)) ----
@@ -650,14 +705,16 @@ ggplot() +
 QC_all = read_delim("results/modelling_results/QC_target_quant_LOO_quant_for_plot.csv", delim = ",") %>%  
   select(Compound, Filename, conc_pg_uL, quant_type)
 
-plot_QC <- ggplot(QC_all %>% filter(grepl("AL", Filename)), aes(fill=quant_type, y=fct_inorder(Compound), x=conc_pg_uL))+
+plot_QC <- ggplot(QC_all %>% filter(grepl("AL", Filename)), aes(fill=quant_type, y=fct_inorder(Compound), x=(conc_pg_uL)))+
   geom_bar(stat = "identity", position = "dodge")+
   scale_fill_manual(values=c("#ee6c4d", "#274c77")) +
   labs(y="", x="pg/µl")+
+  #scale_x_log10() +
   my_theme
 
-# ggsave(plot_QC,  filename = "results/homologue_vs_IEmodel_results/230704_QC_model_target_sampleA.png", width=12, height=14, units = "cm", device = NULL)
-# ggsave(plot_QC, filename = "results/homologue_vs_IEmodel_results/230704_QC_model_target_sampleA.svg", width=12, height=14, units = "cm")
+
+# ggsave(plot_QC,  filename = "results/homologue_vs_IEmodel_results/smaller_230811_QC_model_target_sampleA.png", width=12, height=14, units = "cm", device = NULL)
+# ggsave(plot_QC, filename = "results/homologue_vs_IEmodel_results/smaller_230811_QC_model_target_sampleA.svg", width=12, height=14, units = "cm")
 
 QC_all= QC_all %>% 
   pivot_wider(names_from = quant_type, values_from = conc_pg_uL) %>% 
@@ -671,5 +728,42 @@ plot_QC2 <- ggplot(QC_all %>% filter(grepl("AL", Filename)), aes(fill=Filename, 
 
 # ggsave(plot_QC2,  filename = "results/homologue_vs_IEmodel_results/230704_QC_target_minus_model_sampleA.png", width=12, height=14, units = "cm", device = NULL)
 # ggsave(plot_QC2, filename = "results/homologue_vs_IEmodel_results/230704_QC_target_minus_model_sampleA.svg", width=12, height=14, units = "cm")
+
+# ---- model vs target - QC plots to SI (QC-B and QC-C) ----
+#modified the names in the file:
+QC_all = read_delim("results/modelling_results/QC_target_quant_LOO_quant_for_plot.csv", delim = ",") %>%  
+  select(Compound, Filename, conc_pg_uL, quant_type)
+
+plot_QC1 <- ggplot(QC_all %>% filter(grepl("BL", Filename)), aes(fill=quant_type, y=fct_inorder(Compound), x=(conc_pg_uL)))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values=c("#ee6c4d", "#274c77")) +
+  labs(y="", x="pg/µl")+
+  #scale_x_log10() +
+  my_theme
+
+plot_QC2 <- ggplot(QC_all %>% filter(grepl("CL", Filename)), aes(fill=quant_type, y=fct_inorder(Compound), x=(conc_pg_uL)))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values=c("#ee6c4d", "#274c77")) +
+  labs(y="", x="pg/µl")+
+  #scale_x_log10() +
+  my_theme
+
+#put plots together
+joined_plot5 = plot_QC1 + plot_QC2 
+
+#take off some axis
+joined_plot5[[2]] = joined_plot5[[2]] + theme(axis.text.y = element_blank(),
+                                              axis.ticks.y = element_blank(),
+                                              axis.title.y = element_blank())
+
+joined_plot5[[1]] = joined_plot5[[1]] + theme(axis.ticks.x = element_blank(),
+                                              axis.title.x = element_blank(),
+                                              legend.position = "none")
+#annotate plots
+joined_plot5 = joined_plot5 + plot_annotation(tag_levels = "A")
+
+
+# ggsave(joined_plot5,  filename = "results/homologue_vs_IEmodel_results/230811_QC-B_QC-C.png", width=18, height=14, units = "cm", device = NULL)
+# ggsave(joined_plot5, filename = "results/homologue_vs_IEmodel_results/230811_QC-B_QC-C.svg", width=18, height=14, units = "cm")
 
 
