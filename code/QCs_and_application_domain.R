@@ -74,13 +74,18 @@ QC_all = read_delim("results/modelling_results/QC_target_quant_LOO_quant_for_plo
 
 plot_QC <- ggplot(QC_all, aes(fill=quant_type, y=fct_inorder(Compound), x=conc_pg_uL))+
   geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values=c("#ee6c4d", "#274c77"))+
   labs(y="", x="pg/µl")+
   theme_classic()
+
+# ggsave(plot_QC,  filename = "results/modelling_results/230811_QC.png", width=8, height=14, units = "cm", device = NULL)
+
 
 # fold-differences?
 
 QC_all= QC_all %>% 
-  pivot_wider(names_from = quant_type, values_from = conc_pg_uL) %>% 
+  pivot_wider(names_from = quant_type, values_from = conc_pg_uL) %>%
+  filter(grepl("AL", Filename)) %>% 
   mutate(quant_fold_difference = case_when(model > target ~ model/target,
                                            TRUE ~ target/model)) 
   
@@ -95,8 +100,8 @@ QC_all %>%
 
 # get the descriptor names form the model
 logIE_pred_model_train_test = readRDS(file="models/230619_logIE_model_withPFAS_train_test.RData")
-descriptors = colnames(data_clean) 
-descriptors = descriptors[! descriptors%in% c("logIE", "pH.aq.", "polarity_index", "viscosity", "NH4", "name", "data_type", "SMILES")]
+descriptors = colnames(logIE_pred_model_train_test$data$training_set) 
+descriptors = descriptors[! descriptors%in% c("logIE", "pH.aq.", "polarity_index", "viscosity", "NH4", "name", "data_type", "SMILES", "logIE_predicted")]
 
 #target SMILES
 target_SMILES <- data_all_binded %>% 
@@ -167,9 +172,7 @@ plot_pc1_pc2 = ggplot() +
              alpha = 0.5) + 
   scale_color_manual(values=c("#274c77", "#ee6c4d","#8b8c89"))+
   labs(x = "PC1 (21.6%)", y = "PC2 (8.1%)") +
-  my_theme +
-  theme(legend.position = "bottom")
-
+  my_theme 
 
 plot_pc1_pc2
 
@@ -184,18 +187,13 @@ plot_pc1_pc3 = ggplot() +
   scale_color_manual(values=c("#274c77", "#ee6c4d","#8b8c89"))+
   labs(x = "PC1 (21.6%)", y = "PC3 (6.9%)") +
   my_theme +
-  theme(legend.position = "right")
+  theme(legend.position = "bottom")
 
 # PC3 (11.8%)
 plot_pc1_pc3
 
-joined_plot3 = plot_pc1_pc2 + plot_pc1_pc3
-joined_plot3[[1]] = joined_plot3[[1]] + theme(legend.position = "none") 
 
-joined_plot3 = joined_plot3 + plot_annotation(tag_levels = "A")
 
-# ggsave(joined_plot3,  filename = "results/modelling_results/230704_PCA_targets_suspects.png", width=18, height=10, units = "cm", device = NULL)
-# ggsave(joined_plot3, filename = "results/modelling_results/230704_PCA_targets_suspects.svg", width=18, height=10, units = "cm")
 
 
 
@@ -236,7 +234,7 @@ data_for_tsne = SMILES_all %>%
   unique()
 
 data_matrix  = as.matrix(data_for_tsne %>% select(-c(SMILES, Compound, type)))
-tsne_out <- Rtsne(data_matrix)
+tsne_out <- Rtsne(data_matrix, pca = FALSE)
 
 # Conversion of matrix to dataframe
 tsne_plot <- data.frame(x = tsne_out$Y[,1],
@@ -244,15 +242,20 @@ tsne_plot <- data.frame(x = tsne_out$Y[,1],
   bind_cols(type = data_for_tsne$type)
 
 # Plotting the plot using ggplot() function
-tsne_plot = ggplot2::ggplot(tsne_plot)+ geom_point(aes(x=x,y=y, color = type), alpha = 0.6, size = 2.5) + 
-  scale_color_manual(values=c("#a3cef1","#274c77", "#ee6c4d" )) + 
-  my_theme + theme(legend.position = "bottom")
+tsne_plot = ggplot2::ggplot(tsne_plot)+ geom_point(aes(x=x,y=y, color = type), alpha = 0.6, size = 2) + 
+  scale_color_manual(values=c("#274c77", "#8b8c89", "#ee6c4d" )) + 
+  my_theme + theme(legend.position = "none")
 
 # ggsave(tsne_plot,  filename = "results/modelling_results/230704_tsne.png", width=12, height=13, units = "cm", device = NULL)
 # ggsave(tsne_plot, filename = "results/modelling_results/230704_tsne.svg", width=12, height=13, units = "cm")
 
+# joined plot
 
 
+joined_plot_PCA_tsne = plot_pc1_pc2 + plot_pc1_pc3 + tsne_plot +plot_annotation(tag_levels = "A")
+
+# ggsave(joined_plot_PCA_tsne,  filename = "results/modelling_results/230811_PCA_tsne_targets_suspects.png", width=18, height=8, units = "cm", device = NULL)
+# ggsave(joined_plot_PCA_tsne, filename = "results/modelling_results/230811_PCA_tsne_targets_suspects.svg", width=18, height=8, units = "cm")
 
 
 
