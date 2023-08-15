@@ -73,8 +73,8 @@ my_theme <- theme(
   #or by coordinates. 
   #c(0, 0) corresponds to the "bottom left" 
   #and c(1, 1) corresponds to the "top right" position.
-  legend.position = "none",
-  #legend.position = c(0.75, 0.25),
+  #legend.position = "none",
+  legend.position = c(0.75, 0.25),
   #if you have a legend title and text you can specify font size here
   #here it indicates no legend title
   legend.title = element_blank(), 
@@ -90,7 +90,7 @@ my_theme <- theme(
   #define the ratio of x and y axis
   #PS! for scatter plots it needs to be 1!
   #for predicted - measured plots also adjust the ranges!
-  aspect.ratio = 1,
+  #aspect.ratio = 1,
   #adjust the position of the axis title
   axis.title.x = element_text(hjust = c(1), vjust = c(0)),
   axis.title.y = element_text(hjust = c(1), vjust = c(1))
@@ -734,6 +734,13 @@ plot_QC2 <- ggplot(QC_all %>% filter(grepl("AL", Filename)), aes(fill=Filename, 
 QC_all = read_delim("results/modelling_results/QC_target_quant_LOO_quant_for_plot.csv", delim = ",") %>%  
   select(Compound, Filename, conc_pg_uL, quant_type)
 
+plot_QC0 <- ggplot(QC_all %>% filter(grepl("AL", Filename)), aes(fill=quant_type, y=fct_inorder(Compound), x=(conc_pg_uL)))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values=c("#ee6c4d", "#274c77")) +
+  labs(y="", x="pg/µl")+
+  #scale_x_log10() +
+  my_theme
+
 plot_QC1 <- ggplot(QC_all %>% filter(grepl("BL", Filename)), aes(fill=quant_type, y=fct_inorder(Compound), x=(conc_pg_uL)))+
   geom_bar(stat = "identity", position = "dodge")+
   scale_fill_manual(values=c("#ee6c4d", "#274c77")) +
@@ -749,21 +756,28 @@ plot_QC2 <- ggplot(QC_all %>% filter(grepl("CL", Filename)), aes(fill=quant_type
   my_theme
 
 #put plots together
-joined_plot5 = plot_QC1 + plot_QC2 
+joined_plot5 = plot_QC0 + plot_QC1 + plot_QC2 
 
 #take off some axis
 joined_plot5[[2]] = joined_plot5[[2]] + theme(axis.text.y = element_blank(),
                                               axis.ticks.y = element_blank(),
-                                              axis.title.y = element_blank())
-
-joined_plot5[[1]] = joined_plot5[[1]] + theme(axis.ticks.x = element_blank(),
+                                              axis.title.y = element_blank(),
                                               axis.title.x = element_blank(),
                                               legend.position = "none")
+
+joined_plot5[[1]] = joined_plot5[[1]] + theme(axis.title.x = element_blank(),
+                                              legend.position = "none")
+
+joined_plot5[[3]] = joined_plot5[[3]] + theme(axis.text.y = element_blank(),
+                                              axis.ticks.y = element_blank(),
+                                              axis.title.y = element_blank())
+
+
 #annotate plots
 joined_plot5 = joined_plot5 + plot_annotation(tag_levels = "A")
 
 
-# ggsave(joined_plot5,  filename = "results/homologue_vs_IEmodel_results/230811_QC-B_QC-C.png", width=18, height=14, units = "cm", device = NULL)
-# ggsave(joined_plot5, filename = "results/homologue_vs_IEmodel_results/230811_QC-B_QC-C.svg", width=18, height=14, units = "cm")
+# ggsave(joined_plot5,  filename = "results/homologue_vs_IEmodel_results/230811_QC-ABC.png", width=20, height=14, units = "cm", device = NULL)
+# ggsave(joined_plot5, filename = "results/homologue_vs_IEmodel_results/230811_QC-ABC.svg", width=20, height=14, units = "cm")
 
 
