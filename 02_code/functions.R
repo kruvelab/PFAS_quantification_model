@@ -354,7 +354,7 @@ PaDEL_original = function(standards) {
     select(-Name)
 
   write_delim(descs,
-              "data_for_modelling/descs_calc.csv",
+              "01_data_for_modelling/descs_calc.csv",
               delim = ",")
 
   return(descs)
