@@ -1,9 +1,9 @@
 
 # Change the admin directory
-admin <- "C:/Users/MelanieLauria/Documents/GitHub/PFOA_semi_quant"
+admin <- "C:/Users/HelenSepman/OneDrive - Kruvelab/Documents/GitHub/PFOA_semi_quant"
 
 setwd(admin)
-source("code/functions.R")
+source("/02_code/functions.R")
 library(caTools)
 library(tidyverse)
 library(caret)
@@ -11,25 +11,23 @@ library(plotly)
 library(cowplot)
 
 
-
 #------------------------------------------------
-# Semi-quantification of new suspects (Melanie)
+# Semi-quantification of new suspects 
 #------------------------------------------------
 
 #### When calibrants and suspects are in separate TraceFinder and SMILES files ####
-setwd(admin)
-cal_filename_data <-  paste0(admin,"/data_for_modelling/Batch 1 Semi Quant w frag.xlsx")
-cal_filename_smiles <- paste0(admin,"/data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv")
-sus_filename_data <- paste0(admin,"/results/Melanie_new_suspects/20210810_Melanie_Suspect _Screening_TF.xlsx")
-sus_filename_smiles <- paste0(admin,"/results/Melanie_new_suspects/suspects_smiles_melanie_updated_semicolon2.csv")
-logIE_pred_model <- readRDS(paste0(admin,"/models/230619_logIE_model_withPFAS_allData.Rdata"))
+cal_filename_data <-  paste0(admin,"/01_data_for_modelling/IE_training_data/Batch 1 Semi Quant w frag.xlsx")
+cal_filename_smiles <- paste0(admin,"/01_data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv")
+sus_filename_data <- paste0(admin,"/04_results/new_suspects_quant/20210810_Suspect_Screening_TF.xlsx")
+sus_filename_smiles <- paste0(admin,"/04_results/new_suspects_quant/suspects_smiles_updated_semicolon2.csv")
+logIE_pred_model <- readRDS(paste0(admin,"/03_models/230619_logIE_model_withPFAS_allData.Rdata"))
 
 
-melanie_concentrations_pred <- concentration_forAnalytes_model_cal_separateFile(cal_filename_data,
+concentrations_pred <- concentration_forAnalytes_model_cal_separateFile(cal_filename_data,
                                                                              cal_filename_smiles,
                                                                              sus_filename_data,
                                                                              sus_filename_smiles,
-                                                                             filename_eluent = "data_for_modelling/eluent.csv",
+                                                                             filename_eluent = "01_data_for_modelling/eluent.csv",
                                                                              pred_model =  logIE_pred_model,
                                                                              compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "PFHpS-br", "PFPeS", "PFHpS", "PFNS", "PFPeDA", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
 
