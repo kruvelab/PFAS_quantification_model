@@ -1,5 +1,5 @@
 setwd("C:/Users/.../PFOA_semi_quant")
-source("code/functions.R")
+source("02_code/functions.R")
 library(caTools)
 library(tidyverse)
 library(caret)
@@ -11,7 +11,7 @@ library(cowplot)
 #------------------------------------------------------------------
 
 ## ---- Reading in LC-MS data of calibration solutions ----
-Orbitrap_dataset_raw = read_excel_allsheets(filename = "data_for_modelling/Batch 1 Semi Quant w frag.xlsx")
+Orbitrap_dataset_raw = read_excel_allsheets(filename = "01_data_for_modelling/IE_training_data/Batch 1 Semi Quant w frag.xlsx")
 
 Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   group_by(Compound) %>%
@@ -22,7 +22,7 @@ Orbitrap_dataset_raw = Orbitrap_dataset_raw %>%
   filter(Theoretical_amt != "NaN")
 
 ## ---- Reading in SMILES for calibration compounds, removing NAs and adducts, mono PAPs, HFPO-DA ----
-SMILES_data = read_SMILES(filename = "data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
+SMILES_data = read_SMILES(filename = "01_data_for_modelling/Smiles_for_Target_PFAS_semicolon.csv",
                           compounds_to_be_removed_as_list = c("HFPO-DA", "MeFOSE", "EtFOSE", "10:2 mono PAP", "4:2 mono PAP", "6:2 mono PAP", "8:2 mono PAP"))
 
 ## ---- Joining all collected data to one tibble, removing missing values, calculating slopes ----
@@ -55,7 +55,7 @@ data_all_binded = PaDEL_original(training)
 data_clean = cleaning_data(data_all_binded)
 
 #---------------------------------------------------
-# Training the model with train/test split of 0.8 
+# Training the model with train/test split of 0.8
 #---------------------------------------------------
 logIE_pred_model_train_test = training_logIE_pred_model(data = data_clean,
                                                         split = 0.8)
@@ -78,7 +78,7 @@ IE_slope_cor = ggplot() +
   theme(aspect.ratio = 1,
         legend.key = element_blank()) +
   facet_wrap(~data_type)
- 
+
 IE_slope_cor
 
 # Save model, data, metrics and varImp
@@ -126,7 +126,7 @@ for (i in 1:length(SMILES_list_PFAS$SMILES)) {
   #NB! PFOS needs to be removed from both old and new dataset!
   if(SMILES_list_PFAS[i,2][[1]] == "PFOS") {
     data_forTraining <- data_clean %>%
-      filter(data_clean$SMILES != SMILES_list_PFAS[i,1][[1]]) %>%  
+      filter(data_clean$SMILES != SMILES_list_PFAS[i,1][[1]]) %>%
       filter(!grepl("perfluorooctanesulfonic acid", name, fixed = TRUE))
   } else {
     data_forTraining <- data_clean %>%
@@ -136,22 +136,22 @@ for (i in 1:length(SMILES_list_PFAS$SMILES)) {
   dim(data_forTraining)[1]
   test_object = tibble(compound = c(SMILES_list_PFAS[i,2][[1]]),
                        dimensions = c(dim(data_forTraining)[1]))
-  dim_data=dim_data %>% 
+  dim_data=dim_data %>%
     bind_rows(test_object)
-  
+
   #train the model
   logIE_pred_model_new = training_logIE_pred_model(data = data_forTraining,
                                                    split = 1,
                                                    save_model_name =  paste("models/leave_one_out_approach/model_", i, sep = ""))
-  
+
   #predict logIE for PFAS that was left out
   IE_pred_for_PFAS = data_clean %>%
-    filter(SMILES == SMILES_list_PFAS[i,1][[1]]) 
-  IE_pred_for_PFAS = IE_pred_for_PFAS %>% 
-    mutate(logIE_predicted = predict(logIE_pred_model_new$model, newdata = IE_pred_for_PFAS)) %>% 
-    mutate(model_nr = paste("model_", i, sep = "")) %>% 
+    filter(SMILES == SMILES_list_PFAS[i,1][[1]])
+  IE_pred_for_PFAS = IE_pred_for_PFAS %>%
+    mutate(logIE_predicted = predict(logIE_pred_model_new$model, newdata = IE_pred_for_PFAS)) %>%
+    mutate(model_nr = paste("model_", i, sep = "")) %>%
     select(logIE_predicted, everything())
-  
+
   predicted_PFAS_IEs <- predicted_PFAS_IEs %>%
     bind_rows(IE_pred_for_PFAS)
 }
@@ -165,7 +165,7 @@ predicted_PFAS_IEs_test = predicted_PFAS_IEs %>%
 
 
 # ------------------------------------------------------
-#  Calculating additional model evaluation parameters 
+#  Calculating additional model evaluation parameters
 # ------------------------------------------------------
 ## read in model
 #logIE_pred_model_train_test <- readRDS(file="models/230619_logIE_model_withPFAS_train_test.RData")
@@ -183,10 +183,10 @@ data_for_error_calc_test = logIE_pred_model_train_test$data$test_set %>%
 rmse_train <- rmse(data_for_error_calc_train$logIE, data_for_error_calc_train$logIE_predicted)
 rmse_test <- rmse(data_for_error_calc_test$logIE, data_for_error_calc_test$logIE_predicted)
 
-  
+
 # mean error
-logIE_pred_model_train_test_error <-logIE_pred_model_train_test$data$test_set %>% logIE_pred_model_test %>% 
-  #filter(data_type == "PFAS") %>% 
+logIE_pred_model_train_test_error <-logIE_pred_model_train_test$data$test_set %>% logIE_pred_model_test %>%
+  #filter(data_type == "PFAS") %>%
   mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
                                 TRUE ~ 10^logIE_predicted/10^logIE)) %>%
   # group_by(name) %>%
@@ -211,7 +211,7 @@ median(logIE_pred_model_train_test_error$pred_error)
 
 # ---- model trained on old data vs LOO ----
 
-### Old model  
+### Old model
 # read in model
 old_model_without_PFAS <- readRDS(file="models/230703_logIE_model_withoutPFAS_allData.RData")
 
@@ -219,14 +219,14 @@ old_model_without_PFAS <- readRDS(file="models/230703_logIE_model_withoutPFAS_al
 old_PFAS_data = read_delim("data_for_modelling/230703_PFAS_IE_anchored_PaDEL.csv")
 
 #predict IE values for PFAS
-old_PFAS_data = old_PFAS_data %>% 
-  mutate(logIE_predicted = predict(logIE_pred_model_without_PFAS$model, newdata = PFAS_data)) %>% 
+old_PFAS_data = old_PFAS_data %>%
+  mutate(logIE_predicted = predict(logIE_pred_model_without_PFAS$model, newdata = PFAS_data)) %>%
   mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
                                 TRUE ~ 10^logIE_predicted/10^logIE)) %>%
   select(pred_error,name, everything())
 
 ### LOO
-LOO_data = read_delim("results/modelling_results/PFAS_pred_logIEs_with_leave_one_out_approach.csv") %>% 
+LOO_data = read_delim("results/modelling_results/PFAS_pred_logIEs_with_leave_one_out_approach.csv") %>%
   mutate(pred_error = case_when(10^logIE > 10^logIE_predicted ~ 10^logIE/10^logIE_predicted,
                                 TRUE ~ 10^logIE_predicted/10^logIE)) %>%
   select(pred_error,name, everything())
@@ -238,7 +238,7 @@ wilcox.test(old_PFAS_data$pred_error, LOO_data$pred_error, alternative = "two.si
 # ---- Homologue series (smaller and larger homologue) and model ----
 
 # read in homologue series data
-homologue_data <- read_delim("results/homologue_vs_IEmodel_results/230703_summary_table_CF2_concentrations.csv") %>% 
+homologue_data <- read_delim("results/homologue_vs_IEmodel_results/230703_summary_table_CF2_concentrations.csv") %>%
   mutate(error_model = case_when(Theoretical_conc_uM > conc_pred_uM ~ Theoretical_conc_uM/conc_pred_uM,
                               TRUE ~ conc_pred_uM/Theoretical_conc_uM),
          error_homolog = case_when(
@@ -249,16 +249,16 @@ smaller_homologue = homologue_data %>%  filter(pattern == "smaller") %>% select(
 larger_homologue = homologue_data %>%  filter(pattern == "bigger") %>% select(error_homolog)
 
 # smaller or larger homologue used
-wilcox.test(smaller_homologue$error_homolog, 
+wilcox.test(smaller_homologue$error_homolog,
             larger_homologue$error_homolog,
-            alternative = "two.sided", 
+            alternative = "two.sided",
             paired  = FALSE) # cannot be paired as different nr of observations
 
 
 # model or homologue used
-wilcox.test(homologue_data$error_homolog, 
-            homologue_data$error_model, 
-            alternative = "two.sided", 
+wilcox.test(homologue_data$error_homolog,
+            homologue_data$error_model,
+            alternative = "two.sided",
             paired  = TRUE)
 
 
